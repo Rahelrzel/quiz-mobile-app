@@ -1,0 +1,142 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import InputField from "@/components/InputField";
+
+export default function LoginScreen() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSignIn = () => {
+    // Implementing proper logging of state as requested
+    console.log("Attempting Sign In with:", { email, password });
+
+    if (email && password) {
+      router.replace("/(tabs)/dashboard");
+    } else {
+      console.log("Login Error: Please enter both email and password");
+    }
+  };
+
+  const handleGoogleSignIn = () => {
+    console.log("Sign in with Google");
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Bar */}
+          <View className="flex-row justify-between items-center px-6 py-4 border-b border-gray-100">
+            <View className="flex-row items-center">
+              <View className="bg-sky-500 rounded-xl p-2 mr-2">
+                <Ionicons name="school" size={24} color="white" />
+              </View>
+              <Text className="text-xl font-bold text-gray-900">
+                Job<Text className="text-sky-500">Prep</Text>
+              </Text>
+            </View>
+
+            <TouchableOpacity className="flex-row items-center border border-gray-200 rounded-lg px-3 py-1.5">
+              <Ionicons name="globe-outline" size={16} color="#4B5563" />
+              <Text className="text-gray-600 font-medium mx-1.5 text-sm">
+                English
+              </Text>
+              <Ionicons name="chevron-down" size={14} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-1 justify-center px-6 py-10">
+            <Text className="text-3xl font-bold text-gray-900 mb-2">
+              Sign In
+            </Text>
+            <Text className="text-gray-400 mb-8 text-base">
+              Welcome back! Sign in to continue your journey.
+            </Text>
+
+            <View className="space-y-4">
+              <InputField
+                label="Email"
+                placeholder="john@example.com"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <InputField
+                label="Password"
+                placeholder="••••••••"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+
+            <TouchableOpacity className="items-end mb-8">
+              <Text className="text-sky-500 font-semibold text-sm">
+                Forgot password?
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="bg-sky-500 rounded-xl py-4 items-center shadow-lg shadow-sky-200"
+              onPress={handleSignIn}
+              activeOpacity={0.8}
+            >
+              <Text className="text-white font-bold text-lg">Sign In</Text>
+            </TouchableOpacity>
+
+            <View className="flex-row items-center my-8">
+              <View className="flex-1 h-px bg-gray-100" />
+              <Text className="mx-4 text-gray-400 text-xs font-bold uppercase">
+                OR
+              </Text>
+              <View className="flex-1 h-px bg-gray-100" />
+            </View>
+
+            <TouchableOpacity
+              className="border-2 border-sky-500 rounded-xl py-4 items-center flex-row justify-center bg-white mb-8"
+              onPress={handleGoogleSignIn}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="logo-google" size={20} color="#0EA5E9" />
+              <Text className="text-sky-500 font-bold text-lg ml-3">
+                Continue with Google
+              </Text>
+            </TouchableOpacity>
+
+            <View className="flex-row justify-center items-center pb-6">
+              <Text className="text-gray-400 text-sm">
+                Don't have an account?{" "}
+              </Text>
+              <TouchableOpacity onPress={() => router.push("/register")}>
+                <Text className="text-sky-500 font-bold text-sm">
+                  Create one
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
