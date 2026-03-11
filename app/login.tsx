@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import InputField from "@/components/InputField";
+import InputField from "@/src/components/atoms/InputField";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function LoginScreen() {
     console.log("Attempting Sign In with:", { email, password });
 
     if (email && password) {
-      router.replace("/(tabs)/dashboard");
+      router.replace("/home");
     } else {
       console.log("Login Error: Please enter both email and password");
     }

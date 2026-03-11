@@ -13,7 +13,7 @@ import { MessageSquare, Send } from "lucide-react-native";
 
 export default function ChatbotScreen() {
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"

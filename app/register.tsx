@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import InputField from "@/components/InputField";
+import InputField from "@/src/components/atoms/InputField";
 
 const RegisterScreen: FC = () => {
   const router = useRouter();
@@ -25,7 +25,7 @@ const RegisterScreen: FC = () => {
   const handleCreateAccount = (): void => {
     console.log("Register with:", { fullName, email, password, phone });
     if (fullName && email && password) {
-      router.replace("/(tabs)/dashboard");
+      router.replace("/home");
     } else {
       console.log("Registration Error: Please fill in all required fields");
     }

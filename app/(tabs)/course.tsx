@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BookOpen } from "lucide-react-native";
-import CourseCard from "@/components/CourseCard";
+import CourseCard from "@/src/components/molecules/CourseCard";
 
 export default function CoursesScreen() {
   const courses = [
@@ -27,7 +27,7 @@ export default function CoursesScreen() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 40 }}

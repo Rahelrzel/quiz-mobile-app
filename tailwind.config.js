@@ -12,6 +12,12 @@ module.exports = {
         "safe-top": "env(safe-area-inset-top)",
         "safe-bottom": "env(safe-area-inset-bottom)",
       },
+      margin: {
+        "safe-bottom": "env(safe-area-inset-bottom)",
+      },
+      height: {
+        "tab-bar": "calc(60px + env(safe-area-inset-bottom))",
+      },
     },
   },
   plugins: [],
