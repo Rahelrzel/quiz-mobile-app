@@ -5,32 +5,57 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { categories as mockCategories } from "@/src/data/mockQuizzes";
+import { useCategories, useCreateCategory } from "@/hooks/useQuizzes";
 
 export default function ManageCategories() {
-  const [categories, setCategories] = useState(mockCategories);
+  const { data: categories, isLoading, isError } = useCategories();
+  const { mutate: createCategory, isPending } = useCreateCategory();
+
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
 
   const handleAdd = () => {
-    if (!name) return;
-    const newCat = {
-      id: name.toLowerCase().replace(/ /g, "-"),
-      title: name,
-      description: desc,
-      icon: "list",
-      count: 0,
-    };
-    setCategories([...categories, newCat as any]);
-    setName("");
-    setDesc("");
-    setShowForm(false);
+    if (!name.trim()) {
+      Alert.alert("Error", "Category name is required.");
+      return;
+    }
+
+    createCategory(
+      { name: name.trim(), description: desc.trim() },
+      {
+        onSuccess: () => {
+          Alert.alert("Success", "Category created successfully");
+          setName("");
+          setDesc("");
+          setShowForm(false);
+        },
+        onError: (error: any) => {
+          Alert.alert(
+            "Error",
+            error.message || "Something went wrong while creating the item.",
+          );
+        },
+      },
+    );
   };
+
+  const renderSkeletons = () => (
+    <View>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <View
+          key={i}
+          className="flex-row items-center p-4 border border-gray-100 rounded-2xl mb-4 bg-gray-50 h-20 animate-pulse"
+        />
+      ))}
+    </View>
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
@@ -43,6 +68,7 @@ export default function ManageCategories() {
           <TouchableOpacity
             onPress={() => setShowForm(!showForm)}
             className="bg-sky-500 p-2 rounded-full"
+            disabled={isPending}
           >
             <Ionicons
               name={showForm ? "close" : "add"}
@@ -58,50 +84,65 @@ export default function ManageCategories() {
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="e.g. Science"
+              placeholder="e.g. Technology"
               className="bg-white p-4 rounded-xl mb-4 border border-gray-200"
+              editable={!isPending}
             />
             <Text className="text-gray-900 font-bold mb-2">Description</Text>
             <TextInput
               value={desc}
               onChangeText={setDesc}
-              placeholder="Describe the category"
+              placeholder="Technology related quizzes"
               multiline
               numberOfLines={3}
               className="bg-white p-4 rounded-xl mb-6 border border-gray-200 h-24"
+              editable={!isPending}
             />
             <TouchableOpacity
               onPress={handleAdd}
-              className="bg-sky-500 py-4 rounded-xl items-center"
+              className={`py-4 rounded-xl items-center ${isPending ? "bg-gray-300" : "bg-sky-500"}`}
+              disabled={isPending}
             >
-              <Text className="text-white font-bold text-lg">
-                Save Category
-              </Text>
+              {isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-bold text-lg">
+                  Save Category
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
 
-        {categories.map((cat, idx) => (
-          <View
-            key={idx}
-            className="flex-row items-center p-4 border border-gray-100 rounded-2xl mb-4 shadow-sm bg-white"
-          >
-            <View className="bg-sky-50 p-3 rounded-xl mr-4">
-              <Ionicons name="list" size={24} color="#0ea5e9" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-gray-900 font-bold text-lg">
-                {cat.title}
-              </Text>
-              <Text className="text-gray-400 text-sm" numberOfLines={1}>
-                {cat.description}
-              </Text>
-            </View>
-            <TouchableOpacity className="p-2">
-              <Ionicons name="trash-outline" size={20} color="#ef4444" />
-            </TouchableOpacity>
+        {isLoading ? (
+          renderSkeletons()
+        ) : isError ? (
+          <View className="py-10 items-center">
+            <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+            <Text className="text-gray-500 mt-4 text-center">
+              Failed to load data. Please try again.
+            </Text>
           </View>
-        ))}
+        ) : (
+          categories?.map((cat) => (
+            <View
+              key={cat.id}
+              className="flex-row items-center p-4 border border-gray-100 rounded-2xl mb-4 shadow-sm bg-white"
+            >
+              <View className="bg-sky-50 p-3 rounded-xl mr-4">
+                <Ionicons name="list" size={24} color="#0ea5e9" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-gray-900 font-bold text-lg">
+                  {cat.name}
+                </Text>
+                <Text className="text-gray-400 text-sm" numberOfLines={1}>
+                  {cat.description}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );

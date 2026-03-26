@@ -7,9 +7,18 @@ import {
   ChevronRight,
   Settings,
   ShieldCheck,
+  LogOut,
 } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { authStorage } from "@/lib/authStorage";
 
 export default function ProfileScreen() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await authStorage.clearAuth();
+    router.replace("/login");
+  };
   const certificates = [
     { title: "Technology Basics", date: "Jan 12, 2026" },
     { title: "Teacher's Ethics", date: "Feb 05, 2026" },
@@ -86,6 +95,18 @@ export default function ProfileScreen() {
                 Account Settings
               </Text>
               <ChevronRight size={18} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="flex-row items-center py-5"
+              activeOpacity={0.6}
+              onPress={handleLogout}
+            >
+              <LogOut size={20} color="#EF4444" />
+              <Text className="text-red-500 font-semibold ml-4 flex-1">
+                Sign Out
+              </Text>
+              <ChevronRight size={18} color="#EF4444" />
             </TouchableOpacity>
           </View>
         </View>

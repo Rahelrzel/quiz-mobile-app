@@ -1,5 +1,11 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import {
@@ -9,11 +15,32 @@ import {
   List,
   ExternalLink,
   ChevronRight,
-  Shield,
 } from "lucide-react-native";
+import { authStorage } from "@/lib/authStorage";
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const user = await authStorage.getUser();
+      if (user?.role === "admin") {
+        setIsAdmin(true);
+      } else {
+        router.replace("/home");
+      }
+    };
+    checkAdmin();
+  }, []);
+
+  if (isAdmin === null) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#0EA5E9" />
+      </View>
+    );
+  }
 
   const adminModules = [
     {
@@ -33,12 +60,6 @@ export default function AdminDashboard() {
       icon: LayoutGrid,
       route: "/admin/quizzes",
       color: "#059669",
-    },
-    {
-      title: "Manage Questions",
-      icon: HelpCircle,
-      route: "/admin/questions",
-      color: "#ea580c",
     },
   ];
 
@@ -84,7 +105,7 @@ export default function AdminDashboard() {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.replace("/(tabs)/home")}
+          onPress={() => router.replace("/home")}
           className="bg-white p-6 rounded-3xl mt-4 flex-row items-center border border-sky-100 mb-10 shadow-sm"
           activeOpacity={0.7}
         >

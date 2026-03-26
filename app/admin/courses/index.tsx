@@ -6,45 +6,66 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useCourses, useCreateCourse } from "@/hooks/useCourses";
 
 export default function ManageCourses() {
-  const [courses, setCourses] = useState([
-    {
-      title: "React Native Masterclass",
-      instructor: "Rich Tech",
-      image:
-        "https://images.unsplash.com/photo-1544377193-33dcf4d68fb5?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      title: "UI/UX Design Fundamentals",
-      instructor: "Sara Design",
-      image:
-        "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1000&auto=format&fit=crop",
-    },
-  ]);
+  const { data: courses, isLoading, isError } = useCourses();
+  const { mutate: createCourse, isPending } = useCreateCourse();
+
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
-  const [instructor, setInstructor] = useState("");
+  const [description, setDescription] = useState("");
+  const [contentUrl, setContentUrl] = useState("");
+  const [thumbnail, setThumbnail] = useState("");
 
   const handleAdd = () => {
-    if (!title) return;
-    setCourses([
-      ...courses,
+    if (!title.trim() || !contentUrl.trim()) {
+      Alert.alert("Error", "Title and YouTube URL are required.");
+      return;
+    }
+
+    createCourse(
       {
-        title,
-        instructor,
-        image:
-          "https://images.unsplash.com/photo-1454165833767-027ffea9e53b?q=80&w=1000&auto=format&fit=crop",
+        title: title.trim(),
+        description: description.trim(),
+        contentUrl: contentUrl.trim(),
+        thumbnail: thumbnail.trim(),
       },
-    ]);
-    setTitle("");
-    setInstructor("");
-    setShowForm(false);
+      {
+        onSuccess: () => {
+          Alert.alert("Success", "Course added successfully");
+          setTitle("");
+          setDescription("");
+          setContentUrl("");
+          setThumbnail("");
+          setShowForm(false);
+        },
+        onError: (error: any) => {
+          Alert.alert(
+            "Error",
+            error.message || "Something went wrong while creating the item.",
+          );
+        },
+      },
+    );
   };
+
+  const renderSkeletons = () => (
+    <View>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <View
+          key={i}
+          className="flex-row items-center p-4 border border-gray-100 rounded-2xl mb-4 bg-gray-50 h-24 animate-pulse"
+        />
+      ))}
+    </View>
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
@@ -55,6 +76,7 @@ export default function ManageCourses() {
           <TouchableOpacity
             onPress={() => setShowForm(!showForm)}
             className="bg-purple-500 p-2 rounded-full"
+            disabled={isPending}
           >
             <Ionicons
               name={showForm ? "close" : "add"}
@@ -72,45 +94,83 @@ export default function ManageCourses() {
               onChangeText={setTitle}
               placeholder="e.g. Next.js Mastery"
               className="bg-white p-4 rounded-xl mb-4 border border-gray-200"
+              editable={!isPending}
             />
-            <Text className="text-gray-900 font-bold mb-2">
-              Instructor Name
-            </Text>
+            <Text className="text-gray-900 font-bold mb-2">Description</Text>
             <TextInput
-              value={instructor}
-              onChangeText={setInstructor}
-              placeholder="e.g. John Doe"
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Course description"
+              multiline
+              numberOfLines={3}
+              className="bg-white p-4 rounded-xl mb-4 border border-gray-200 h-24"
+              editable={!isPending}
+            />
+            <Text className="text-gray-900 font-bold mb-2">YouTube URL</Text>
+            <TextInput
+              value={contentUrl}
+              onChangeText={setContentUrl}
+              placeholder="https://youtube.com/..."
+              className="bg-white p-4 rounded-xl mb-4 border border-gray-200"
+              editable={!isPending}
+            />
+            <Text className="text-gray-900 font-bold mb-2">Thumbnail URL</Text>
+            <TextInput
+              value={thumbnail}
+              onChangeText={setThumbnail}
+              placeholder="https://image-url.com"
               className="bg-white p-4 rounded-xl mb-6 border border-gray-200"
+              editable={!isPending}
             />
             <TouchableOpacity
               onPress={handleAdd}
-              className="bg-purple-500 py-4 rounded-xl items-center"
+              className={`py-4 rounded-xl items-center ${isPending ? "bg-gray-300" : "bg-purple-500"}`}
+              disabled={isPending}
             >
-              <Text className="text-white font-bold text-lg">Save Course</Text>
+              {isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-bold text-lg">
+                  Save Course
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
 
-        {courses.map((course, idx) => (
-          <View
-            key={idx}
-            className="flex-row items-center p-4 border border-gray-100 rounded-2xl mb-4 shadow-sm bg-white"
-          >
-            <Image
-              source={{ uri: course.image }}
-              className="w-16 h-16 rounded-xl mr-4"
-            />
-            <View className="flex-1">
-              <Text className="text-gray-900 font-bold text-lg leading-6">
-                {course.title}
-              </Text>
-              <Text className="text-gray-400 text-sm">{course.instructor}</Text>
-            </View>
-            <TouchableOpacity className="p-2">
-              <Ionicons name="trash-outline" size={20} color="#ef4444" />
-            </TouchableOpacity>
+        {isLoading ? (
+          renderSkeletons()
+        ) : isError ? (
+          <View className="py-10 items-center">
+            <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+            <Text className="text-gray-500 mt-4 text-center">
+              Failed to load data. Please try again.
+            </Text>
           </View>
-        ))}
+        ) : (
+          courses?.map((course) => (
+            <View
+              key={course.id}
+              className="flex-row items-center p-4 border border-gray-100 rounded-2xl mb-4 shadow-sm bg-white"
+            >
+              <Image
+                source={{ uri: course.thumbnail }}
+                className="w-16 h-16 rounded-xl mr-4 bg-gray-100"
+              />
+              <View className="flex-1">
+                <Text
+                  className="text-gray-900 font-bold text-lg leading-6"
+                  numberOfLines={1}
+                >
+                  {course.title}
+                </Text>
+                <Text className="text-gray-400 text-sm" numberOfLines={2}>
+                  {course.description}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );

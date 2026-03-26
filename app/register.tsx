@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC } from "react";
 import {
   View,
   Text,
@@ -6,29 +6,56 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import InputField from "@/src/components/atoms/InputField";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { registerSchema, RegisterFormData } from "@/validation/authSchemas";
+import { useRegister } from "@/hooks/useRegister";
+import { authStorage } from "@/lib/authStorage";
 
 const RegisterScreen: FC = () => {
   const router = useRouter();
+  const { mutate: register, isPending } = useRegister();
 
-  // State types
-  const [fullName, setFullName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [phone, setPhone] = useState<string>("");
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      phone: "",
+    },
+  });
 
-  // Handlers
-  const handleCreateAccount = (): void => {
-    console.log("Register with:", { fullName, email, password, phone });
-    if (fullName && email && password) {
-      router.replace("/home");
-    } else {
-      console.log("Registration Error: Please fill in all required fields");
-    }
+  const onSubmit = (data: RegisterFormData) => {
+    console.log("Register onSubmit triggered with data:", data);
+    register(data, {
+      onSuccess: async (response) => {
+        await authStorage.setToken(response.token);
+        await authStorage.setUser(response);
+        router.replace("/home");
+      },
+      onError: (error: any) => {
+        const message =
+          error.message || "An error occurred during registration";
+        if (message.toLowerCase().includes("email")) {
+          setError("email", { message });
+        } else {
+          Alert.alert("Registration Failed", message);
+        }
+      },
+    });
   };
 
   const handleGoogleSignUp = (): void => {
@@ -77,46 +104,91 @@ const RegisterScreen: FC = () => {
 
             {/* Input Fields */}
             <View className="space-y-4">
-              <InputField
-                label="Full Name"
-                placeholder="John Doe"
-                value={fullName}
-                onChangeText={setFullName}
-                autoCapitalize="words"
+              <Controller
+                control={control}
+                name="name"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <InputField
+                    label="Full Name"
+                    placeholder="John Doe"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    autoCapitalize="words"
+                    error={errors.name?.message}
+                  />
+                )}
               />
-              <InputField
-                label="Email"
-                placeholder="john@example.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
+
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <InputField
+                    label="Email"
+                    placeholder="john@example.com"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    error={errors.email?.message}
+                  />
+                )}
               />
-              <InputField
-                label="Password"
-                placeholder="••••••••"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
+
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <InputField
+                    label="Password"
+                    placeholder="••••••••"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    secureTextEntry
+                    error={errors.password?.message}
+                  />
+                )}
               />
-              <InputField
-                label="Phone (Optional)"
-                placeholder="+1 234 567 8900"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
+
+              <Controller
+                control={control}
+                name="phone"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <InputField
+                    label="Phone (Optional)"
+                    placeholder="+1 234 567 8900"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value || ""}
+                    keyboardType="phone-pad"
+                    error={errors.phone?.message}
+                  />
+                )}
               />
             </View>
 
             {/* Create Account Button */}
             <TouchableOpacity
-              className="bg-sky-500 rounded-xl py-4 items-center shadow-lg shadow-sky-200 mt-8"
-              onPress={handleCreateAccount}
+              className={`bg-sky-500 rounded-xl py-4 items-center shadow-lg shadow-sky-200 mt-8 ${
+                isPending ? "opacity-70" : ""
+              }`}
+              onPress={() => {
+                console.log("Create Account button pressed");
+                handleSubmit(onSubmit)();
+              }}
+              disabled={isPending}
               activeOpacity={0.8}
             >
-              <Text className="text-white font-bold text-lg">
-                Create Account
-              </Text>
+              {isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-bold text-lg">
+                  Create Account
+                </Text>
+              )}
             </TouchableOpacity>
 
             {/* OR Divider */}

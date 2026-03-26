@@ -1,30 +1,39 @@
 import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { BookOpen } from "lucide-react-native";
+import { BookOpen, AlertCircle } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import CourseCard from "@/src/components/molecules/CourseCard";
+import { useCourses } from "@/hooks/useCourses";
 
 export default function CoursesScreen() {
-  const courses = [
-    {
-      title: "teachers",
-      description: "this is for teachers lesson",
-      image:
-        "https://images.unsplash.com/photo-1544377193-33dcf4d68fb5?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      title: "reception",
-      description: "this is course",
-      image:
-        "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1000&auto=format&fit=crop",
-    },
-    {
-      title: "test 3",
-      description: "this is test 3",
-      image:
-        "https://images.unsplash.com/photo-1454165833767-027ffea9e53b?q=80&w=1000&auto=format&fit=crop",
-    },
-  ];
+  const router = useRouter();
+  const { data: courses, isLoading, isError } = useCourses();
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#0EA5E9" />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white px-6">
+        <AlertCircle size={64} color="#EF4444" />
+        <Text className="mt-4 text-xl font-bold text-gray-900 text-center">
+          Unable to load courses. Please try again.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
@@ -46,13 +55,13 @@ export default function CoursesScreen() {
           </Text>
 
           <View className="space-y-4">
-            {courses.map((course, index) => (
+            {courses?.map((course) => (
               <CourseCard
-                key={index}
+                key={course.id}
                 title={course.title}
                 description={course.description}
-                image={course.image}
-                onPress={() => console.log(`Selected course: ${course.title}`)}
+                image={course.thumbnail}
+                onPress={() => router.push(`/courses/${course.id}` as any)}
               />
             ))}
           </View>

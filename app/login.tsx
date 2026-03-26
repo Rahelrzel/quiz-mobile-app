@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -6,26 +6,60 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import InputField from "@/src/components/atoms/InputField";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, LoginFormData } from "@/validation/authSchemas";
+import { useLogin } from "@/hooks/useLogin";
+import { authStorage } from "@/lib/authStorage";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { mutate: login, isPending } = useLogin();
 
-  const handleSignIn = () => {
-    // Implementing proper logging of state as requested
-    console.log("Attempting Sign In with:", { email, password });
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-    if (email && password) {
-      router.replace("/home");
-    } else {
-      console.log("Login Error: Please enter both email and password");
-    }
+  const onSubmit = (data: LoginFormData) => {
+    console.log("Login onSubmit triggered with data:", data);
+    login(data, {
+      onSuccess: async (response) => {
+        await authStorage.setToken(response.token);
+        await authStorage.setUser(response);
+        console.log("Login success:", response);
+        if (response.role === "admin") {
+          router.replace("/admin");
+        } else {
+          router.replace("/home");
+        }
+      },
+      onError: (error: any) => {
+        const message = error.message || "Invalid email or password";
+        if (message.toLowerCase().includes("email")) {
+          setError("email", { message });
+        } else if (message.toLowerCase().includes("password")) {
+          setError("password", { message });
+        } else {
+          Alert.alert("Login Failed", message);
+        }
+      },
+    });
   };
 
   const handleGoogleSignIn = () => {
@@ -73,21 +107,37 @@ export default function LoginScreen() {
             </Text>
 
             <View className="space-y-4">
-              <InputField
-                label="Email"
-                placeholder="john@example.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <InputField
+                    label="Email"
+                    placeholder="john@example.com"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    error={errors.email?.message}
+                  />
+                )}
               />
 
-              <InputField
-                label="Password"
-                placeholder="••••••••"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <InputField
+                    label="Password"
+                    placeholder="••••••••"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    secureTextEntry
+                    error={errors.password?.message}
+                  />
+                )}
               />
             </View>
 
@@ -98,11 +148,21 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="bg-sky-500 rounded-xl py-4 items-center shadow-lg shadow-sky-200"
-              onPress={handleSignIn}
+              className={`bg-sky-500 rounded-xl py-4 items-center shadow-lg shadow-sky-200 ${
+                isPending ? "opacity-70" : ""
+              }`}
+              onPress={() => {
+                console.log("Login button pressed");
+                handleSubmit(onSubmit)();
+              }}
+              disabled={isPending}
               activeOpacity={0.8}
             >
-              <Text className="text-white font-bold text-lg">Sign In</Text>
+              {isPending ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-bold text-lg">Sign In</Text>
+              )}
             </TouchableOpacity>
 
             <View className="flex-row items-center my-8">

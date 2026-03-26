@@ -5,16 +5,20 @@ import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function QuizResultScreen() {
-  const { score, total, quizId } = useLocalSearchParams<{
-    score: string;
-    total: string;
-    quizId: string;
-  }>();
+  const { score, total, quizId, passed, certificateId, answers } =
+    useLocalSearchParams<{
+      score: string;
+      total: string;
+      quizId: string;
+      passed: string;
+      certificateId: string;
+      answers: string;
+    }>();
   const router = useRouter();
 
   const scoreNum = parseInt(score || "0");
   const totalNum = parseInt(total || "0");
-  const percentage = Math.round((scoreNum / totalNum) * 100);
+  const isPassed = passed === "true";
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
@@ -24,7 +28,7 @@ export default function QuizResultScreen() {
         <View className="w-48 h-48 rounded-full bg-sky-50 items-center justify-center mb-10">
           <View className="w-36 h-36 rounded-full bg-sky-100 items-center justify-center">
             <Ionicons
-              name={percentage >= 50 ? "trophy" : "ribbon"}
+              name={isPassed ? "trophy" : "ribbon"}
               size={80}
               color="#0EA5E9"
             />
@@ -32,14 +36,12 @@ export default function QuizResultScreen() {
         </View>
 
         <Text className="text-3xl font-bold text-gray-900 mb-2 text-center">
-          {percentage >= 80
-            ? "Outstanding!"
-            : percentage >= 50
-              ? "Well Done!"
-              : "Keep Practicing!"}
+          {isPassed ? "Congratulations! You passed!" : "Keep Practicing!"}
         </Text>
         <Text className="text-gray-400 text-lg text-center mb-10">
-          You've completed the quiz and shown great effort.
+          {isPassed
+            ? "You've successfully completed the quiz and earned a certificate."
+            : "You did not pass this quiz. Try again to improve your score."}
         </Text>
 
         <View className="flex-row w-full justify-between mb-12">
@@ -48,31 +50,50 @@ export default function QuizResultScreen() {
               Score
             </Text>
             <Text className="text-3xl font-black text-sky-500">
-              {percentage}%
+              {scoreNum}%
             </Text>
           </View>
           <View className="bg-gray-50 rounded-3xl p-6 items-center flex-1 ml-3 border border-gray-100">
             <Text className="text-gray-400 text-sm font-bold uppercase mb-1">
-              Correct
+              Total Questions
             </Text>
             <Text className="text-3xl font-black text-gray-900">
-              {scoreNum}/{totalNum}
+              {totalNum}
             </Text>
           </View>
         </View>
 
+        {isPassed && certificateId ? (
+          <TouchableOpacity
+            onPress={() => router.push(`/certificate/${certificateId}`)}
+            className="bg-sky-500 w-full rounded-2xl py-5 items-center shadow-lg shadow-sky-200 mb-4"
+          >
+            <Text className="text-white font-bold text-lg">
+              View Certificate
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
         <TouchableOpacity
-          onPress={() => router.replace(`/quiz/play/${quizId}`)}
-          className="bg-sky-500 w-full rounded-2xl py-5 items-center shadow-lg shadow-sky-200 mb-4"
+          onPress={() => router.replace(`/quiz/${quizId}`)}
+          className={`w-full rounded-2xl py-5 items-center mb-4 ${
+            isPassed
+              ? "border-2 border-sky-500 bg-white"
+              : "bg-sky-500 shadow-lg shadow-sky-200"
+          }`}
         >
-          <Text className="text-white font-bold text-lg">Restart Quiz</Text>
+          <Text
+            className={`font-bold text-lg ${isPassed ? "text-sky-500" : "text-white"}`}
+          >
+            Retake Quiz
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.replace("/(tabs)/home")}
-          className="border-2 border-sky-500 w-full rounded-2xl py-5 items-center bg-white"
+          onPress={() => router.replace("/home")}
+          className="w-full rounded-2xl py-5 items-center"
         >
-          <Text className="text-sky-500 font-bold text-lg">Back to Home</Text>
+          <Text className="text-gray-400 font-bold text-lg">Back to Home</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

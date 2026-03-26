@@ -7,6 +7,7 @@ interface InputFieldProps extends TextInputProps {
   secureTextEntry?: boolean;
   value: string;
   onChangeText: (text: string) => void;
+  error?: string;
 }
 
 export default function InputField({
@@ -16,6 +17,7 @@ export default function InputField({
   value,
   onChangeText,
   keyboardType,
+  error,
   ...rest
 }: InputFieldProps) {
   return (
@@ -24,7 +26,9 @@ export default function InputField({
         <Text className="text-gray-700 font-semibold mb-2 ml-1">{label}</Text>
       )}
       <TextInput
-        className="border border-gray-100 rounded-xl px-4 py-4 bg-gray-50/50 text-gray-900 text-base"
+        className={`border rounded-xl px-4 py-4 bg-gray-50/50 text-gray-900 text-base ${
+          error ? "border-red-500" : "border-gray-100"
+        }`}
         placeholder={placeholder}
         placeholderTextColor="#9CA3AF"
         secureTextEntry={secureTextEntry}
@@ -35,6 +39,7 @@ export default function InputField({
         autoCorrect={false}
         {...rest}
       />
+      {error && <Text className="text-red-500 text-xs mt-1 ml-1">{error}</Text>}
     </View>
   );
 }
