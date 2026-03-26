@@ -8,6 +8,8 @@ export interface ChatMessage {
 export interface ChatResponse {
   success: boolean;
   reply: string;
+  message?: string;
+  content?: string;
 }
 
 export const sendMessage = async (

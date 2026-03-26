@@ -10,19 +10,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MessageSquare, Send } from "lucide-react-native";
+import { Bot, Send, User } from "lucide-react-native";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "@/api/chat";
 
 export default function ChatbotScreen() {
   const [inputText, setInputText] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Hello! I'm your JobPrep assistant. How can I help you today? You can ask me about available courses, quiz categories, or general assessment tips.",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const scrollRef = useRef<ScrollView>(null);
   const { mutate: sendMessage, isPending } = useChat();
@@ -44,14 +38,21 @@ export default function ChatbotScreen() {
     // Auto-scroll to bottom
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
+    // Align history handling with web app (slice last 5 messages)
+    const history = updatedMessages.slice(-5);
+
     sendMessage(
-      { message: userMessage.content, history: updatedMessages },
+      { message: userMessage.content, history },
       {
         onSuccess: (data) => {
-          if (data.success) {
+          // Robust response parsing matching web app: reply || message || content
+          const reply =
+            data?.reply || data?.message || data?.content || "No response.";
+
+          if (data.success || reply !== "No response.") {
             setMessages((prev) => [
               ...prev,
-              { role: "assistant", content: data.reply },
+              { role: "assistant", content: reply },
             ]);
           } else {
             setMessages((prev) => [
@@ -59,7 +60,7 @@ export default function ChatbotScreen() {
               {
                 role: "assistant",
                 content:
-                  "Sorry, I couldn't connect to the assistant. Please try again.",
+                  "Sorry, the assistant is currently unavailable. Please try again.",
               },
             ]);
           }
@@ -68,6 +69,7 @@ export default function ChatbotScreen() {
             100,
           );
         },
+
         onError: () => {
           setMessages((prev) => [
             ...prev,
@@ -94,7 +96,7 @@ export default function ChatbotScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <View className="px-6 pt-6 flex-row items-center border-b border-gray-50 pb-4">
-          <MessageSquare size={24} color="#0EA5E9" />
+          <Bot size={24} color="#0EA5E9" />
           <Text className="text-2xl font-bold text-gray-900 ml-3">
             JobPrep Assistant
           </Text>
@@ -106,15 +108,35 @@ export default function ChatbotScreen() {
           contentContainerStyle={{ paddingVertical: 20 }}
           showsVerticalScrollIndicator={false}
         >
+          {messages.length === 0 && (
+            <View className="flex-row justify-start mb-6">
+              <View className="w-8 h-8 rounded-full bg-sky-100 items-center justify-center mr-2 mt-1">
+                <Bot size={16} color="#0EA5E9" />
+              </View>
+              <View className="p-4 rounded-2xl max-w-[80%] bg-gray-100 rounded-tl-none border border-gray-200">
+                <Text className="text-base leading-6 text-gray-800">
+                  Hello! I'm your JobPrep assistant. How can I help you today?
+                  You can ask me about available courses, quiz categories, or
+                  general assessment tips.
+                </Text>
+              </View>
+            </View>
+          )}
+
           {messages.map((msg, index) => (
             <View
               key={index}
-              className={`mb-6 max-w-[85%] ${
-                msg.role === "user" ? "self-end" : "self-start"
+              className={`mb-6 flex-row ${
+                msg.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
+              {msg.role === "assistant" && (
+                <View className="w-8 h-8 rounded-full bg-sky-100 items-center justify-center mr-2 mt-1">
+                  <Bot size={16} color="#0EA5E9" />
+                </View>
+              )}
               <View
-                className={`p-4 rounded-2xl ${
+                className={`p-4 rounded-2xl max-w-[80%] ${
                   msg.role === "user"
                     ? "bg-sky-500 rounded-tr-none"
                     : "bg-gray-100 rounded-tl-none border border-gray-200"
@@ -128,17 +150,27 @@ export default function ChatbotScreen() {
                   {msg.content}
                 </Text>
               </View>
+              {msg.role === "user" && (
+                <View className="w-8 h-8 rounded-full bg-gray-200 items-center justify-center ml-2 mt-1">
+                  <User size={16} color="#4B5563" />
+                </View>
+              )}
             </View>
           ))}
 
           {isPending && (
-            <View className="self-start bg-gray-50 p-4 rounded-2xl rounded-tl-none border border-gray-100 mb-6 flex-row items-center">
-              <ActivityIndicator
-                size="small"
-                color="#0EA5E9"
-                className="mr-2"
-              />
-              <Text className="text-gray-400 italic">Bot is typing...</Text>
+            <View className="flex-row justify-start mb-6">
+              <View className="w-8 h-8 rounded-full bg-sky-100 items-center justify-center mr-2 mt-1">
+                <Bot size={16} color="#0EA5E9" />
+              </View>
+              <View className="bg-gray-50 p-4 rounded-2xl rounded-tl-none border border-gray-100 flex-row items-center">
+                <ActivityIndicator
+                  size="small"
+                  color="#0EA5E9"
+                  className="mr-2"
+                />
+                <Text className="text-gray-400 italic">Bot is typing...</Text>
+              </View>
             </View>
           )}
         </ScrollView>

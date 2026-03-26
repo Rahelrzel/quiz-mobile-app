@@ -2,7 +2,7 @@ import axios from "axios";
 import { authStorage } from "./authStorage";
 
 const api = axios.create({
-  baseURL: "http://192.168.0.101:5001/api/",
+  baseURL: "http://192.168.0.107:5001/api/",
   headers: {
     "Content-Type": "application/json",
   },
