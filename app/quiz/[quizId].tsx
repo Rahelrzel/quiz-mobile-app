@@ -24,10 +24,10 @@ export default function QuizPlayerScreen() {
   const params = useLocalSearchParams<{
     quizId: string;
     lang?: string;
-    payment_success?: string;
+    restore?: string;
     currentIndex?: string;
     answers?: string;
-    order?: string;
+    questionOrder?: string;
   }>();
   const { quizId, lang: langParam } = params;
 
@@ -73,7 +73,7 @@ export default function QuizPlayerScreen() {
   const checkSavedProgress = async () => {
     try {
       // 1. Check for restoration from payment success screen
-      if (params.payment_success === "true") {
+      if (params.restore === "true") {
         // This is handled by a separate useEffect below for cleaner state management
         return;
       }
@@ -127,7 +127,7 @@ export default function QuizPlayerScreen() {
 
   // Handle restoration from payment success route params
   useEffect(() => {
-    if (params.payment_success === "true") {
+    if (params.restore === "true") {
       console.log(
         "[QuizPlayer] Handling payment success restoration from route params",
       );
@@ -151,18 +151,18 @@ export default function QuizPlayerScreen() {
           console.error("Failed to parse restored answers:", e);
         }
       }
-      if (params.order) {
+      if (params.questionOrder) {
         try {
-          setQuestionOrder(JSON.parse(params.order as string));
+          setQuestionOrder(JSON.parse(params.questionOrder as string));
         } catch (e) {
           console.error("Failed to parse restored order:", e);
         }
       }
 
       // Clear params from URL to prevent re-restoration on reload
-      router.setParams({ payment_success: undefined });
+      router.setParams({ restore: undefined });
     }
-  }, [quizId, params.payment_success]);
+  }, [quizId, params.restore]);
 
   useEffect(() => {
     const initFreshSession = async () => {
@@ -219,6 +219,15 @@ export default function QuizPlayerScreen() {
 
   // Trigger payment modal on question 3 (index 2) if not paid
   useEffect(() => {
+    console.log("[Quiz] State update:", {
+      isQuizLoading,
+      isRestoring,
+      hasPaid,
+      currentIndex,
+      shouldShowModal:
+        !isQuizLoading && !isRestoring && !hasPaid && currentIndex === 2,
+    });
+
     if (
       currentIndex === 2 &&
       !hasPaid &&
@@ -227,11 +236,19 @@ export default function QuizPlayerScreen() {
       quiz.questions &&
       quiz.questions.length > 3
     ) {
+      console.log("[Quiz] 🚨 TRIGGERING PAYMENT MODAL");
       setShowPaymentModal(true);
     } else {
       setShowPaymentModal(false);
     }
-  }, [currentIndex, hasPaid, isPaymentProcessed, quiz]);
+  }, [
+    currentIndex,
+    hasPaid,
+    isPaymentProcessed,
+    quiz,
+    isQuizLoading,
+    isRestoring,
+  ]);
 
   const transformedQuestions = React.useMemo(() => {
     const questions = quiz?.questions;
@@ -299,6 +316,13 @@ export default function QuizPlayerScreen() {
   const currentQuestion = transformedQuestions[currentIndex];
 
   const handleSelectAnswer = (index: number) => {
+    // Don't allow answering beyond question 3 if not paid
+    if (currentIndex === 2 && !hasPaid && !isPaymentProcessed) {
+      console.log("[Quiz] 🚨 Blocking answer selection - payment required");
+      setShowPaymentModal(true);
+      return;
+    }
+
     if (isAnswered) return;
 
     setSelectedAnswer(index);
@@ -353,6 +377,18 @@ export default function QuizPlayerScreen() {
   };
 
   const handleNext = () => {
+    if (
+      currentIndex === 2 &&
+      !hasPaid &&
+      !isPaymentProcessed &&
+      quiz &&
+      quiz.questions &&
+      quiz.questions.length > 3
+    ) {
+      setShowPaymentModal(true);
+      return;
+    }
+
     const nextIndex = currentIndex + 1;
     if (currentIndex < transformedQuestions.length - 1) {
       setCurrentIndex(nextIndex);
@@ -601,6 +637,10 @@ export default function QuizPlayerScreen() {
         )}
         shuffledQuestionIds={transformedQuestions.map((q) => q.id)}
         onCancel={() => router.back()}
+        onPaymentComplete={() => {
+          setHasPaid(true);
+          setIsPaymentProcessed(true);
+        }}
       />
     </SafeAreaView>
   );

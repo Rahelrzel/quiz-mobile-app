@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useEffect } from "react";
 import {
   View,
   Text,
@@ -56,10 +56,6 @@ const RegisterScreen: FC = () => {
         }
       },
     });
-  };
-
-  const handleGoogleSignUp = (): void => {
-    console.log("Sign up with Google");
   };
 
   return (
@@ -189,27 +185,6 @@ const RegisterScreen: FC = () => {
                   Create Account
                 </Text>
               )}
-            </TouchableOpacity>
-
-            {/* OR Divider */}
-            <View className="flex-row items-center my-8">
-              <View className="flex-1 h-px bg-gray-100" />
-              <Text className="mx-4 text-gray-400 text-xs font-bold uppercase">
-                OR
-              </Text>
-              <View className="flex-1 h-px bg-gray-100" />
-            </View>
-
-            {/* Google Sign-Up */}
-            <TouchableOpacity
-              className="border-2 border-sky-500 rounded-xl py-4 items-center flex-row justify-center bg-white"
-              onPress={handleGoogleSignUp}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="logo-google" size={20} color="#0EA5E9" />
-              <Text className="text-sky-500 font-bold text-lg ml-3">
-                Continue with Google
-              </Text>
             </TouchableOpacity>
 
             {/* Sign-in Link */}

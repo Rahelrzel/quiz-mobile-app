@@ -43,6 +43,11 @@ export const useGlobalPayment = () => {
 
       console.log("[useGlobalPayment] successUrl:", successUrl);
       console.log("[useGlobalPayment] cancelUrl:", cancelUrl);
+      console.log("[Payment] Initiating with:", {
+        quizId,
+        successUrl,
+        cancelUrl,
+      });
 
       const response = await api.post("/payments/create-checkout-session", {
         quizId: Number(quizId),
@@ -50,10 +55,22 @@ export const useGlobalPayment = () => {
         cancelUrl,
       });
 
-      return response.data.url;
-    } catch (error) {
-      console.error("Failed to initiate payment:", error);
-      throw error;
+      console.log("[Payment] Response:", response.data);
+
+      if (response.data?.url) {
+        return response.data.url;
+      } else {
+        throw new Error("No checkout URL received");
+      }
+    } catch (error: any) {
+      console.error("[Payment] Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      throw new Error(
+        error.response?.data?.message || "Failed to initiate payment",
+      );
     }
   };
 

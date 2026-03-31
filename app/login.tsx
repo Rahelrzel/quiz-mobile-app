@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -60,10 +60,6 @@ export default function LoginScreen() {
         }
       },
     });
-  };
-
-  const handleGoogleSignIn = () => {
-    console.log("Sign in with Google");
   };
 
   return (
@@ -163,25 +159,6 @@ export default function LoginScreen() {
               ) : (
                 <Text className="text-white font-bold text-lg">Sign In</Text>
               )}
-            </TouchableOpacity>
-
-            <View className="flex-row items-center my-8">
-              <View className="flex-1 h-px bg-gray-100" />
-              <Text className="mx-4 text-gray-400 text-xs font-bold uppercase">
-                OR
-              </Text>
-              <View className="flex-1 h-px bg-gray-100" />
-            </View>
-
-            <TouchableOpacity
-              className="border-2 border-sky-500 rounded-xl py-4 items-center flex-row justify-center bg-white mb-8"
-              onPress={handleGoogleSignIn}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="logo-google" size={20} color="#0EA5E9" />
-              <Text className="text-sky-500 font-bold text-lg ml-3">
-                Continue with Google
-              </Text>
             </TouchableOpacity>
 
             <View className="flex-row justify-center items-center pb-6">

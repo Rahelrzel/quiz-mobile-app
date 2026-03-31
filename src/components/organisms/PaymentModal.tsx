@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import { saveQuizSession } from "../../services/quizSession";
 import { useGlobalPayment } from "../../../hooks/usePayment";
 
@@ -23,6 +25,7 @@ interface PaymentModalProps {
   selectedAnswers: any; // Record<string, number | null>
   shuffledQuestionIds: (number | string)[];
   onCancel: () => void;
+  onPaymentComplete?: () => void;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -35,6 +38,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   selectedAnswers,
   shuffledQuestionIds,
   onCancel,
+  onPaymentComplete,
 }) => {
   const [isPending, setIsPending] = useState(false);
   const { initiatePayment } = useGlobalPayment();
@@ -74,23 +78,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         isCompleted: false,
       });
 
-      // 3. Create checkout session with success URL that includes payment success flag
-      const successUrl = Linking.createURL("quiz/success", {
-        queryParams: {
-          quizId: String(quizId),
-          payment_success: "true",
-          currentIndex: currentQuestionIndex.toString(),
-          answers: JSON.stringify(selectedAnswers),
-          order: JSON.stringify(shuffledQuestionIds),
-          session_id: "{CHECKOUT_SESSION_ID}",
-        },
-      });
+      // 3. Create checkout session with backend URLs
+      const backendUrl =
+        Platform.OS === "ios"
+          ? "http://localhost:5001"
+          : "http://10.0.2.2:5001";
 
-      const cancelUrl = Linking.createURL("quiz/cancel", {
-        queryParams: {
-          quizId: String(quizId),
-        },
-      });
+      const successUrl = `${backendUrl}/api/payments/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${backendUrl}/api/payments/cancel`;
 
       const checkoutUrl = await initiatePayment(
         String(quizId),
@@ -101,9 +96,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         cancelUrl,
       );
 
-      // 4. Open Stripe checkout in browser
+      // 4. Open Stripe checkout in native app browser
       if (checkoutUrl) {
-        await Linking.openURL(checkoutUrl);
+        const result = await WebBrowser.openAuthSessionAsync(
+          checkoutUrl,
+          "http://localhost:8081/payment-success",
+        );
+
+        if (result.type === "success" && onPaymentComplete) {
+          onPaymentComplete();
+          onClose();
+        }
       }
     } catch (error) {
       console.error("Payment initiation failed:", error);
