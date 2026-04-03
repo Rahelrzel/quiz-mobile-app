@@ -2,6 +2,8 @@ import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import { BookOpen } from "lucide-react-native";
 
+const PRIMARY = "#db8300";
+
 interface CourseCardProps {
   title: string;
   description: string;
@@ -17,7 +19,6 @@ const CourseCard: React.FC<CourseCardProps> = ({
 }) => {
   return (
     <View className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-6 shadow-sm">
-      {/* Course Image - Using a placeholder if no image provided */}
       <View className="h-40 bg-gray-200">
         <Image
           source={{
@@ -40,11 +41,14 @@ const CourseCard: React.FC<CourseCardProps> = ({
 
         <TouchableOpacity
           onPress={onPress}
-          className="border border-sky-500 rounded-xl py-3 items-center flex-row justify-center"
+          className="rounded-xl py-3 items-center flex-row justify-center border"
+          style={{ borderColor: PRIMARY }}
           activeOpacity={0.7}
         >
-          <BookOpen size={18} color="#0EA5E9" />
-          <Text className="text-sky-500 font-bold ml-2">View Course</Text>
+          <BookOpen size={18} color={PRIMARY} />
+          <Text className="font-bold ml-2" style={{ color: PRIMARY }}>
+            View Course
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

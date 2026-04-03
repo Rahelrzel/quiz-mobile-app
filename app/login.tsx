@@ -19,6 +19,8 @@ import { loginSchema, LoginFormData } from "@/validation/authSchemas";
 import { useLogin } from "@/hooks/useLogin";
 import { authStorage } from "@/lib/authStorage";
 
+const PRIMARY = "#db8300";
+
 export default function LoginScreen() {
   const router = useRouter();
   const { mutate: login, isPending } = useLogin();
@@ -37,12 +39,10 @@ export default function LoginScreen() {
   });
 
   const onSubmit = (data: LoginFormData) => {
-    console.log("Login onSubmit triggered with data:", data);
     login(data, {
       onSuccess: async (response) => {
         await authStorage.setToken(response.token);
         await authStorage.setUser(response);
-        console.log("Login success:", response);
         if (response.role === "admin") {
           router.replace("/admin");
         } else {
@@ -77,11 +77,14 @@ export default function LoginScreen() {
           {/* Header Bar */}
           <View className="flex-row justify-between items-center px-6 py-4 border-b border-gray-100">
             <View className="flex-row items-center">
-              <View className="bg-sky-500 rounded-xl p-2 mr-2">
+              <View
+                className="rounded-xl p-2 mr-2"
+                style={{ backgroundColor: PRIMARY }}
+              >
                 <Ionicons name="school" size={24} color="white" />
               </View>
               <Text className="text-xl font-bold text-gray-900">
-                Job<Text className="text-sky-500">Prep</Text>
+                LearnWorlds
               </Text>
             </View>
 
@@ -138,19 +141,18 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity className="items-end mb-8">
-              <Text className="text-sky-500 font-semibold text-sm">
+              <Text
+                className="font-semibold text-sm"
+                style={{ color: PRIMARY }}
+              >
                 Forgot password?
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className={`bg-sky-500 rounded-xl py-4 items-center shadow-lg shadow-sky-200 ${
-                isPending ? "opacity-70" : ""
-              }`}
-              onPress={() => {
-                console.log("Login button pressed");
-                handleSubmit(onSubmit)();
-              }}
+              className={`rounded-xl py-4 items-center shadow-lg ${isPending ? "opacity-70" : ""}`}
+              style={{ backgroundColor: PRIMARY }}
+              onPress={() => handleSubmit(onSubmit)()}
               disabled={isPending}
               activeOpacity={0.8}
             >
@@ -161,12 +163,12 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            <View className="flex-row justify-center items-center pb-6">
+            <View className="flex-row justify-center items-center pb-6 mt-6">
               <Text className="text-gray-400 text-sm">
                 Don't have an account?{" "}
               </Text>
               <TouchableOpacity onPress={() => router.push("/register")}>
-                <Text className="text-sky-500 font-bold text-sm">
+                <Text className="font-bold text-sm" style={{ color: PRIMARY }}>
                   Create one
                 </Text>
               </TouchableOpacity>

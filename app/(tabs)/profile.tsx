@@ -12,6 +12,8 @@ import {
 import { useRouter } from "expo-router";
 import { authStorage } from "@/lib/authStorage";
 
+const PRIMARY = "#db8300";
+
 export default function ProfileScreen() {
   const router = useRouter();
 
@@ -19,6 +21,7 @@ export default function ProfileScreen() {
     await authStorage.clearAuth();
     router.replace("/login");
   };
+
   const certificates = [
     { title: "Technology Basics", date: "Jan 12, 2026" },
     { title: "Teacher's Ethics", date: "Feb 05, 2026" },
@@ -33,7 +36,7 @@ export default function ProfileScreen() {
       >
         <View className="px-6 pt-6">
           <View className="flex-row items-center mb-8">
-            <UserCircle size={24} color="#0EA5E9" />
+            <UserCircle size={24} color={PRIMARY} />
             <Text className="text-2xl font-bold text-gray-900 ml-3">
               My Profile
             </Text>
@@ -41,9 +44,12 @@ export default function ProfileScreen() {
 
           {/* Stats Section */}
           <View className="flex-row gap-x-4 mb-10">
-            <View className="flex-1 bg-sky-500 rounded-2xl p-6 items-center shadow-lg shadow-sky-100">
+            <View
+              className="flex-1 rounded-2xl p-6 items-center shadow-lg"
+              style={{ backgroundColor: PRIMARY }}
+            >
               <Text className="text-white font-bold text-3xl">3</Text>
-              <Text className="text-sky-100 text-xs mt-1 font-semibold uppercase tracking-wider">
+              <Text className="text-white/80 text-xs mt-1 font-semibold uppercase tracking-wider">
                 Quizzes
               </Text>
             </View>
@@ -58,7 +64,7 @@ export default function ProfileScreen() {
           {/* Certificates Section */}
           <View className="mb-10">
             <View className="flex-row items-center mb-6">
-              <Award size={20} color="#0EA5E9" />
+              <Award size={20} color={PRIMARY} />
               <Text className="text-lg font-bold text-gray-900 ml-3">
                 My Certificates
               </Text>
@@ -71,7 +77,7 @@ export default function ProfileScreen() {
                 activeOpacity={0.7}
               >
                 <View className="bg-white rounded-xl p-2 mr-4 border border-gray-100 shadow-sm">
-                  <ShieldCheck size={20} color="#0EA5E9" />
+                  <ShieldCheck size={20} color={PRIMARY} />
                 </View>
                 <View className="flex-1">
                   <Text className="text-gray-900 font-bold">{cert.title}</Text>

@@ -12,6 +12,8 @@ import { useRouter } from "expo-router";
 import CourseCard from "@/src/components/molecules/CourseCard";
 import { useCourses } from "@/hooks/useCourses";
 
+const PRIMARY = "#db8300";
+
 export default function CoursesScreen() {
   const router = useRouter();
   const { data: courses, isLoading, isError } = useCourses();
@@ -19,7 +21,7 @@ export default function CoursesScreen() {
   if (isLoading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#0EA5E9" />
+        <ActivityIndicator size="large" color={PRIMARY} />
       </View>
     );
   }
@@ -44,7 +46,7 @@ export default function CoursesScreen() {
       >
         <View className="px-6 pt-6">
           <View className="flex-row items-center mb-6">
-            <BookOpen size={24} color="#0EA5E9" />
+            <BookOpen size={24} color={PRIMARY} />
             <Text className="text-2xl font-bold text-gray-900 ml-3">
               Available Courses
             </Text>

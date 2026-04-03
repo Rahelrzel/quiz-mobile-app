@@ -71,11 +71,12 @@ export function BottomTabBar({
             onLongPress={onLongPress}
             className="flex-1 items-center justify-center"
           >
-            <Icon size={24} color={isFocused ? "#0EA5E9" : "#94A3B8"} />
+            <Icon size={24} color={isFocused ? "#db8300" : "#94A3B8"} />
             <Text
               className={`text-xs mt-1.5 font-semibold ${
-                isFocused ? "text-sky-500" : "text-slate-400"
+                isFocused ? "" : "text-slate-400"
               }`}
+              style={isFocused ? { color: "#db8300" } : {}}
             >
               {tab.label}
             </Text>

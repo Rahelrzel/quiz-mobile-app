@@ -10,10 +10,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { saveQuizSession } from "../../services/quizSession";
 import { useGlobalPayment } from "../../../hooks/usePayment";
+
+// Amber/orange theme matching web app primary color (#db8300)
+const THEME_COLOR = "#db8300";
+const THEME_COLOR_LIGHT = "#fff8eb";
 
 interface PaymentModalProps {
   visible: boolean;
@@ -22,7 +25,7 @@ interface PaymentModalProps {
   quizTitle: string;
   totalQuestions: number;
   currentQuestionIndex: number;
-  selectedAnswers: any; // Record<string, number | null>
+  selectedAnswers: any;
   shuffledQuestionIds: (number | string)[];
   onCancel: () => void;
   onPaymentComplete?: () => void;
@@ -54,7 +57,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const handlePayment = async () => {
     setIsPending(true);
     try {
-      // 1. Save quiz progress locally (like web's localStorage)
+      // 1. Save quiz progress locally
       const progress = {
         quizId: String(quizId),
         currentQuestionIndex,
@@ -67,7 +70,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         JSON.stringify(progress),
       );
 
-      // 2. Also save to backend (like web)
+      // 2. Also save to backend
       await saveQuizSession({
         quizId: Number(quizId),
         currentQuestionIndex,
@@ -78,7 +81,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         isCompleted: false,
       });
 
-      // 3. Create checkout session with backend URLs
+      // 3. Create checkout session
       const backendUrl =
         Platform.OS === "ios"
           ? "http://localhost:5001"
@@ -96,7 +99,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         cancelUrl,
       );
 
-      // 4. Open Stripe checkout in native app browser
+      // 4. Open Stripe checkout in native browser
       if (checkoutUrl) {
         const result = await WebBrowser.openAuthSessionAsync(
           checkoutUrl,
@@ -135,8 +138,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         <View className="bg-white rounded-3xl p-6 w-full max-w-md">
           {/* Header */}
           <View className="items-center mb-6">
-            <View className="w-16 h-16 rounded-full bg-blue-100 items-center justify-center mb-4">
-              <Ionicons name="lock-closed" size={32} color="#3b82f6" />
+            <View
+              className="w-16 h-16 rounded-full items-center justify-center mb-4"
+              style={{ backgroundColor: THEME_COLOR_LIGHT }}
+            >
+              <Ionicons name="lock-closed" size={32} color={THEME_COLOR} />
             </View>
             <Text className="text-2xl font-bold text-center text-gray-900">
               Unlock All Quizzes
@@ -154,7 +160,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </Text>
             {features.map((feature, index) => (
               <View key={index} className="flex-row items-center gap-2 mb-2">
-                <Ionicons name="checkmark-circle" size={18} color="#3b82f6" />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={18}
+                  color={THEME_COLOR}
+                />
                 <Text className="text-sm text-gray-600 flex-1">{feature}</Text>
               </View>
             ))}
@@ -163,7 +173,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           {/* Price */}
           <View className="items-center mb-6">
             <View className="flex-row items-center gap-1 mb-2">
-              <Ionicons name="sparkles" size={16} color="#3b82f6" />
+              <Ionicons name="sparkles" size={16} color={THEME_COLOR} />
               <Text className="text-sm text-gray-500">One-time payment</Text>
             </View>
             <Text className="text-4xl font-bold text-gray-900">$9.99</Text>
@@ -172,11 +182,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </Text>
           </View>
 
-          {/* Buttons */}
+          {/* Pay Button */}
           <TouchableOpacity
             onPress={handlePayment}
             disabled={isPending}
-            className="bg-blue-500 py-4 rounded-xl flex-row items-center justify-center gap-2 mb-3"
+            className="py-4 rounded-xl flex-row items-center justify-center gap-2 mb-3"
+            style={{ backgroundColor: isPending ? "#6ee7b7" : THEME_COLOR }}
           >
             {isPending ? (
               <ActivityIndicator color="white" />
@@ -190,6 +201,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             )}
           </TouchableOpacity>
 
+          {/* Cancel Button */}
           <TouchableOpacity
             onPress={handleCancel}
             disabled={isPending}

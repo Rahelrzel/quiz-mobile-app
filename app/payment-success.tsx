@@ -62,7 +62,7 @@ export default function PaymentSuccess() {
 
   return (
     <View className="flex-1 justify-center items-center bg-white">
-      <ActivityIndicator size="large" color="#10b981" />
+      <ActivityIndicator size="large" color="#db8300" />
       <Text className="mt-4 text-gray-600">
         Payment successful! Returning to quiz...
       </Text>

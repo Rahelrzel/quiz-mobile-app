@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  StyleSheet,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,6 +13,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useCertificate } from "@/hooks/useQuizzes";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+
+const PRIMARY = "#db8300";
+const PRIMARY_LIGHT = "#fff8eb";
 
 export default function CertificateScreen() {
   const { certificateId } = useLocalSearchParams<{ certificateId: string }>();
@@ -35,20 +37,20 @@ export default function CertificateScreen() {
               align-items: center; 
               height: 100vh; 
               margin: 0;
-              background-color: #f0f9ff;
+              background-color: #fff8eb;
             }
             .certificate-container {
               background-color: #ffffff;
-              border: 10px solid #0ea5e9;
+              border: 10px solid #db8300;
               padding: 50px;
               width: 80%;
               text-align: center;
               box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             }
-            .title { color: #0ea5e9; font-size: 48px; font-weight: bold; margin-bottom: 20px; }
+            .title { color: #db8300; font-size: 48px; font-weight: bold; margin-bottom: 20px; }
             .content { font-size: 24px; color: #4b5563; margin-bottom: 30px; }
             .user-name { font-size: 36px; color: #111827; font-weight: bold; text-decoration: underline; margin: 20px 0; }
-            .quiz-title { font-size: 28px; color: #0ea5e9; font-weight: bold; margin: 10px 0; }
+            .quiz-title { font-size: 28px; color: #db8300; font-weight: bold; margin: 10px 0; }
             .details { font-size: 18px; color: #9ca3af; margin-top: 40px; }
           </style>
         </head>
@@ -83,7 +85,7 @@ export default function CertificateScreen() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color="#0EA5E9" />
+        <ActivityIndicator size="large" color={PRIMARY} />
       </SafeAreaView>
     );
   }
@@ -95,7 +97,8 @@ export default function CertificateScreen() {
         <Text className="text-xl font-bold mt-4">Certificate Not Found</Text>
         <TouchableOpacity
           onPress={() => router.back()}
-          className="mt-6 bg-sky-500 px-8 py-3 rounded-xl"
+          className="mt-6 px-8 py-3 rounded-xl"
+          style={{ backgroundColor: PRIMARY }}
         >
           <Text className="text-white font-bold">Go Back</Text>
         </TouchableOpacity>
@@ -104,7 +107,11 @@ export default function CertificateScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-sky-50" edges={["top", "bottom"]}>
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: PRIMARY_LIGHT }}
+      edges={["top", "bottom"]}
+    >
       <Stack.Screen
         options={{
           title: "Your Certificate",
@@ -117,8 +124,11 @@ export default function CertificateScreen() {
         }}
       />
       <ScrollView className="flex-1 p-6">
-        <View className="bg-white border-4 border-sky-500 p-8 rounded-3xl shadow-xl items-center text-center">
-          <Text className="text-sky-500 text-4xl font-black mb-6">
+        <View
+          className="bg-white p-8 rounded-3xl shadow-xl items-center text-center border-4"
+          style={{ borderColor: PRIMARY }}
+        >
+          <Text className="text-4xl font-black mb-6" style={{ color: PRIMARY }}>
             CERTIFICATE
           </Text>
           <View className="w-16 h-px bg-gray-200 mb-6" />
@@ -133,11 +143,14 @@ export default function CertificateScreen() {
           <Text className="text-gray-400 font-bold uppercase text-xs tracking-widest mb-2">
             successfully passed
           </Text>
-          <Text className="text-xl font-bold text-sky-600 mb-2">
+          <Text className="text-xl font-bold mb-2" style={{ color: PRIMARY }}>
             {cert.quiz.title} Quiz
           </Text>
-          <View className="bg-sky-50 px-3 py-1 rounded-full mb-8">
-            <Text className="text-sky-500 font-bold text-xs">
+          <View
+            className="px-3 py-1 rounded-full mb-8"
+            style={{ backgroundColor: PRIMARY_LIGHT }}
+          >
+            <Text className="font-bold text-xs" style={{ color: PRIMARY }}>
               {cert.category.name}
             </Text>
           </View>
@@ -172,7 +185,8 @@ export default function CertificateScreen() {
 
         <TouchableOpacity
           onPress={handleDownload}
-          className="mt-10 bg-sky-500 rounded-2xl py-5 items-center flex-row justify-center shadow-lg shadow-sky-200"
+          className="mt-10 rounded-2xl py-5 items-center flex-row justify-center shadow-lg"
+          style={{ backgroundColor: PRIMARY }}
         >
           <Ionicons name="download-outline" size={24} color="white" />
           <Text className="text-white font-bold text-lg ml-3">
@@ -182,10 +196,11 @@ export default function CertificateScreen() {
 
         <TouchableOpacity
           onPress={() => router.replace("/home")}
-          className="mt-4 border-2 border-sky-500 rounded-2xl py-5 items-center"
+          className="mt-4 rounded-2xl py-5 items-center border-2 bg-white"
+          style={{ borderColor: PRIMARY }}
         >
-          <Text className="text-sky-500 font-bold text-lg">
-            Back to Courses
+          <Text className="font-bold text-lg" style={{ color: PRIMARY }}>
+            Back to Home
           </Text>
         </TouchableOpacity>
       </ScrollView>

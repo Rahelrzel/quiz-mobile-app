@@ -2,6 +2,9 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { FileText, ChevronRight } from "lucide-react-native";
 
+const PRIMARY = "#db8300";
+const PRIMARY_LIGHT = "#fff8eb";
+
 interface QuizCategoryCardProps {
   title: string;
   quizCount: number;
@@ -16,8 +19,11 @@ const QuizCategoryCard: React.FC<QuizCategoryCardProps> = ({
   return (
     <View className="bg-white rounded-2xl border border-gray-100 p-6 mb-4 shadow-sm">
       <View className="flex-row items-center mb-4">
-        <View className="bg-sky-50 rounded-xl p-3 mr-4">
-          <FileText size={24} color="#0EA5E9" />
+        <View
+          className="rounded-xl p-3 mr-4"
+          style={{ backgroundColor: PRIMARY_LIGHT }}
+        >
+          <FileText size={24} color={PRIMARY} />
         </View>
         <View className="flex-1">
           <Text className="text-gray-900 font-bold text-lg">{title}</Text>
@@ -29,7 +35,8 @@ const QuizCategoryCard: React.FC<QuizCategoryCardProps> = ({
 
       <TouchableOpacity
         onPress={onPress}
-        className="bg-sky-500 rounded-xl py-3 items-center flex-row justify-center"
+        className="rounded-xl py-3 items-center flex-row justify-center"
+        style={{ backgroundColor: PRIMARY }}
         activeOpacity={0.8}
       >
         <Text className="text-white font-bold mr-2">View Quizzes</Text>

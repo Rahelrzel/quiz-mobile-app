@@ -11,6 +11,8 @@ import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuizzesByCategory, useQuizCategories } from "@/hooks/useQuizzes";
 
+const PRIMARY = "#db8300";
+
 export default function CategoryQuizzesScreen() {
   const { categoryId, lang: langParam } = useLocalSearchParams<{
     categoryId: string;
@@ -32,7 +34,7 @@ export default function CategoryQuizzesScreen() {
   if (isLoading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#0EA5E9" />
+        <ActivityIndicator size="large" color={PRIMARY} />
       </View>
     );
   }
@@ -113,7 +115,10 @@ export default function CategoryQuizzesScreen() {
                   </View>
                 </View>
 
-                <View className="bg-sky-500 rounded-2xl py-4 items-center">
+                <View
+                  className="rounded-2xl py-4 items-center"
+                  style={{ backgroundColor: PRIMARY }}
+                >
                   <Text className="text-white font-bold text-lg">
                     Start Quiz
                   </Text>

@@ -7,6 +7,8 @@ import { useQuizCategories } from "@/hooks/useQuizzes";
 import { Ionicons } from "@expo/vector-icons";
 import QuizCategoryCard from "@/src/components/molecules/QuizCategoryCard";
 
+const PRIMARY = "#db8300";
+
 const LANGUAGES = [
   { code: "en", label: "English" },
   { code: "fr", label: "French" },
@@ -40,7 +42,6 @@ export default function HomeScreen() {
   const selectedLanguageLabel =
     LANGUAGES.find((l) => l.code === language)?.label || "English";
 
-  // Skeleton Loader for Categories
   const renderSkeletons = () => (
     <View className="mb-10">
       <View className="flex-row items-center mb-6">
@@ -68,7 +69,8 @@ export default function HomeScreen() {
         </Text>
         <TouchableOpacity
           onPress={() => router.replace("/home")}
-          className="mt-6 bg-sky-500 px-6 py-3 rounded-xl"
+          className="mt-6 px-6 py-3 rounded-xl"
+          style={{ backgroundColor: PRIMARY }}
         >
           <Text className="text-white font-bold">Retry</Text>
         </TouchableOpacity>
@@ -78,15 +80,16 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      {/* Header with Language Selector */}
+      {/* Header */}
       <View className="flex-row justify-between items-center px-6 py-4 border-b border-gray-100">
         <View className="flex-row items-center">
-          <View className="bg-sky-500 rounded-xl p-2 mr-2">
+          <View
+            className="rounded-xl p-2 mr-2"
+            style={{ backgroundColor: PRIMARY }}
+          >
             <Ionicons name="school" size={24} color="white" />
           </View>
-          <Text className="text-xl font-bold text-gray-900">
-            Job<Text className="text-sky-500">Prep</Text>
-          </Text>
+          <Text className="text-xl font-bold text-gray-900">LearnWorlds</Text>
         </View>
 
         <TouchableOpacity
@@ -112,13 +115,12 @@ export default function HomeScreen() {
           ) : (
             <View className="mb-10">
               <View className="flex-row items-center mb-6">
-                <LayoutGrid size={24} color="#0EA5E9" />
+                <LayoutGrid size={24} color={PRIMARY} />
                 <Text className="text-2xl font-bold text-gray-900 ml-3">
                   Practice Quizzes
                 </Text>
               </View>
 
-              {/* Category List */}
               {categories?.map((category) => (
                 <QuizCategoryCard
                   key={category.id}

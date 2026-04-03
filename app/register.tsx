@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from "react";
+import React, { FC } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterFormData } from "@/validation/authSchemas";
 import { useRegister } from "@/hooks/useRegister";
 import { authStorage } from "@/lib/authStorage";
+
+const PRIMARY = "#db8300";
 
 const RegisterScreen: FC = () => {
   const router = useRouter();
@@ -39,7 +41,6 @@ const RegisterScreen: FC = () => {
   });
 
   const onSubmit = (data: RegisterFormData) => {
-    console.log("Register onSubmit triggered with data:", data);
     register(data, {
       onSuccess: async (response) => {
         await authStorage.setToken(response.token);
@@ -72,11 +73,14 @@ const RegisterScreen: FC = () => {
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 py-4 border-b border-gray-100 mb-8">
             <View className="flex-row items-center">
-              <View className="bg-sky-500 rounded-xl p-2 mr-2">
+              <View
+                className="rounded-xl p-2 mr-2"
+                style={{ backgroundColor: PRIMARY }}
+              >
                 <Ionicons name="school" size={24} color="white" />
               </View>
               <Text className="text-2xl font-bold text-gray-900">
-                Job<Text className="text-sky-500">Prep</Text>
+                LearnWorlds
               </Text>
             </View>
 
@@ -90,15 +94,13 @@ const RegisterScreen: FC = () => {
           </View>
 
           <View className="px-6">
-            {/* Title */}
             <Text className="text-3xl font-bold text-gray-900 mb-2">
               Create Account
             </Text>
             <Text className="text-gray-400 mb-10 text-base">
-              Start your journey to ace job assessments
+              Start your learning journey today
             </Text>
 
-            {/* Input Fields */}
             <View className="space-y-4">
               <Controller
                 control={control}
@@ -166,15 +168,10 @@ const RegisterScreen: FC = () => {
               />
             </View>
 
-            {/* Create Account Button */}
             <TouchableOpacity
-              className={`bg-sky-500 rounded-xl py-4 items-center shadow-lg shadow-sky-200 mt-8 ${
-                isPending ? "opacity-70" : ""
-              }`}
-              onPress={() => {
-                console.log("Create Account button pressed");
-                handleSubmit(onSubmit)();
-              }}
+              className={`rounded-xl py-4 items-center shadow-lg mt-8 ${isPending ? "opacity-70" : ""}`}
+              style={{ backgroundColor: PRIMARY }}
+              onPress={() => handleSubmit(onSubmit)()}
               disabled={isPending}
               activeOpacity={0.8}
             >
@@ -187,13 +184,14 @@ const RegisterScreen: FC = () => {
               )}
             </TouchableOpacity>
 
-            {/* Sign-in Link */}
             <View className="flex-row justify-center items-center mt-10">
               <Text className="text-gray-400 text-sm">
                 Already have an account?{" "}
               </Text>
               <TouchableOpacity onPress={() => router.push("/login")}>
-                <Text className="text-sky-500 font-bold text-sm">Sign in</Text>
+                <Text className="font-bold text-sm" style={{ color: PRIMARY }}>
+                  Sign in
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

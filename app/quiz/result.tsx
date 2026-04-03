@@ -4,6 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
+const PRIMARY = "#db8300";
+
 export default function QuizResultScreen() {
   const { score, total, quizId, passed, certificateId, answers } =
     useLocalSearchParams<{
@@ -25,12 +27,18 @@ export default function QuizResultScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View className="flex-1 justify-center px-8 items-center">
-        <View className="w-48 h-48 rounded-full bg-sky-50 items-center justify-center mb-10">
-          <View className="w-36 h-36 rounded-full bg-sky-100 items-center justify-center">
+        <View
+          className="w-48 h-48 rounded-full items-center justify-center mb-10"
+          style={{ backgroundColor: "#fff8eb" }}
+        >
+          <View
+            className="w-36 h-36 rounded-full items-center justify-center"
+            style={{ backgroundColor: "#ffedc2" }}
+          >
             <Ionicons
               name={isPassed ? "trophy" : "ribbon"}
               size={80}
-              color="#0EA5E9"
+              color={PRIMARY}
             />
           </View>
         </View>
@@ -49,7 +57,7 @@ export default function QuizResultScreen() {
             <Text className="text-gray-400 text-sm font-bold uppercase mb-1">
               Score
             </Text>
-            <Text className="text-3xl font-black text-sky-500">
+            <Text className="text-3xl font-black" style={{ color: PRIMARY }}>
               {scoreNum}%
             </Text>
           </View>
@@ -66,7 +74,8 @@ export default function QuizResultScreen() {
         {isPassed && certificateId ? (
           <TouchableOpacity
             onPress={() => router.push(`/certificate/${certificateId}`)}
-            className="bg-sky-500 w-full rounded-2xl py-5 items-center shadow-lg shadow-sky-200 mb-4"
+            className="w-full rounded-2xl py-5 items-center shadow-lg mb-4"
+            style={{ backgroundColor: PRIMARY }}
           >
             <Text className="text-white font-bold text-lg">
               View Certificate
@@ -76,15 +85,10 @@ export default function QuizResultScreen() {
 
         <TouchableOpacity
           onPress={() => router.replace(`/quiz/${quizId}`)}
-          className={`w-full rounded-2xl py-5 items-center mb-4 ${
-            isPassed
-              ? "border-2 border-sky-500 bg-white"
-              : "bg-sky-500 shadow-lg shadow-sky-200"
-          }`}
+          className="w-full rounded-2xl py-5 items-center mb-4 bg-white border-2"
+          style={{ borderColor: PRIMARY }}
         >
-          <Text
-            className={`font-bold text-lg ${isPassed ? "text-sky-500" : "text-white"}`}
-          >
+          <Text className="font-bold text-lg" style={{ color: PRIMARY }}>
             Retake Quiz
           </Text>
         </TouchableOpacity>

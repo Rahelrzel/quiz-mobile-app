@@ -41,7 +41,12 @@ export default function QuizPlayerScreen() {
   } = useQuizById(quizId, lang);
   const { mutate: submit, isPending: isSubmitting } = useSubmitQuiz();
   const { getSavedQuizProgress, clearSavedQuizProgress } = useGlobalPayment();
-  const { hasPaid, setHasPaid } = usePaymentStatus();
+  const {
+    hasPaid,
+    setHasPaid,
+    isLoading: isPaymentLoading,
+    checkPaymentStatus,
+  } = usePaymentStatus();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -67,6 +72,7 @@ export default function QuizPlayerScreen() {
   useEffect(() => {
     if (quizId) {
       checkSavedProgress();
+      checkPaymentStatus();
     }
   }, [quizId]);
 
@@ -219,16 +225,10 @@ export default function QuizPlayerScreen() {
 
   // Trigger payment modal on question 3 (index 2) if not paid
   useEffect(() => {
-    console.log("[Quiz] State update:", {
-      isQuizLoading,
-      isRestoring,
-      hasPaid,
-      currentIndex,
-      shouldShowModal:
-        !isQuizLoading && !isRestoring && !hasPaid && currentIndex === 2,
-    });
-
     if (
+      !isQuizLoading &&
+      !isRestoring &&
+      !isPaymentLoading &&
       currentIndex === 2 &&
       !hasPaid &&
       !isPaymentProcessed &&
@@ -248,6 +248,7 @@ export default function QuizPlayerScreen() {
     quiz,
     isQuizLoading,
     isRestoring,
+    isPaymentLoading,
   ]);
 
   const transformedQuestions = React.useMemo(() => {
@@ -317,7 +318,12 @@ export default function QuizPlayerScreen() {
 
   const handleSelectAnswer = (index: number) => {
     // Don't allow answering beyond question 3 if not paid
-    if (currentIndex === 2 && !hasPaid && !isPaymentProcessed) {
+    if (
+      currentIndex === 2 &&
+      !hasPaid &&
+      !isPaymentProcessed &&
+      !isPaymentLoading
+    ) {
       console.log("[Quiz] 🚨 Blocking answer selection - payment required");
       setShowPaymentModal(true);
       return;
@@ -381,6 +387,7 @@ export default function QuizPlayerScreen() {
       currentIndex === 2 &&
       !hasPaid &&
       !isPaymentProcessed &&
+      !isPaymentLoading &&
       quiz &&
       quiz.questions &&
       quiz.questions.length > 3
@@ -418,7 +425,7 @@ export default function QuizPlayerScreen() {
   const getOptionStyle = (index: number) => {
     if (!isAnswered) {
       return selectedAnswer === index
-        ? "border-sky-500 bg-sky-50"
+        ? "border-amber-400 bg-amber-50"
         : "border-gray-100 bg-white";
     }
 
@@ -438,7 +445,7 @@ export default function QuizPlayerScreen() {
 
   const getOptionTextColor = (index: number) => {
     if (!isAnswered) {
-      return selectedAnswer === index ? "text-sky-600" : "text-gray-700";
+      return selectedAnswer === index ? "" : "text-gray-700";
     }
     if (index === currentQuestion.correctAnswer) return "text-green-700";
     if (selectedAnswer === index) return "text-red-700";
@@ -506,9 +513,12 @@ export default function QuizPlayerScreen() {
             </TouchableOpacity>
           ),
           headerRight: () => (
-            <View className="mr-4 bg-sky-50 px-3 py-1.5 rounded-xl flex-row items-center border border-sky-100">
-              <Ionicons name="time-outline" size={16} color="#0EA5E9" />
-              <Text className="text-sky-600 font-bold ml-1.5">
+            <View
+              className="mr-4 px-3 py-1.5 rounded-xl flex-row items-center border"
+              style={{ backgroundColor: "#fff8eb", borderColor: "#ffd980" }}
+            >
+              <Ionicons name="time-outline" size={16} color="#db8300" />
+              <Text className="font-bold ml-1.5" style={{ color: "#db8300" }}>
                 {formatTime(timeLeft)}
               </Text>
             </View>
@@ -519,9 +529,10 @@ export default function QuizPlayerScreen() {
       <View className="flex-row px-6 py-4 items-center justify-between border-b border-gray-50">
         <View className="flex-1 h-2 bg-gray-100 rounded-full mr-4">
           <View
-            className="h-2 bg-sky-500 rounded-full"
+            className="h-2 rounded-full"
             style={{
               width: `${((currentIndex + 1) / transformedQuestions.length) * 100}%`,
+              backgroundColor: "#db8300",
             }}
           />
         </View>
@@ -551,7 +562,7 @@ export default function QuizPlayerScreen() {
                     : isAnswered && selectedAnswer === index
                       ? "border-red-500 bg-red-500"
                       : selectedAnswer === index
-                        ? "border-sky-500"
+                        ? "border-amber-400"
                         : "border-gray-200"
                 }`}
               >
@@ -569,7 +580,8 @@ export default function QuizPlayerScreen() {
                   />
                 ) : (
                   <Text
-                    className={`font-bold ${selectedAnswer === index ? "text-sky-500" : "text-gray-400"}`}
+                    className={`font-bold ${selectedAnswer === index ? "" : "text-gray-400"}`}
+                    style={selectedAnswer === index ? { color: "#db8300" } : {}}
                   >
                     {String.fromCharCode(65 + index)}
                   </Text>
@@ -587,8 +599,10 @@ export default function QuizPlayerScreen() {
         {isAnswered && (
           <View className="mt-8 bg-gray-50 rounded-3xl p-6 mb-10 border border-gray-100">
             <View className="flex-row items-center mb-3">
-              <Ionicons name="information-circle" size={20} color="#0EA5E9" />
-              <Text className="text-sky-600 font-bold ml-2">Explanation</Text>
+              <Ionicons name="information-circle" size={20} color="#db8300" />
+              <Text className="font-bold ml-2" style={{ color: "#db8300" }}>
+                Explanation
+              </Text>
             </View>
             <Text className="text-gray-600 leading-6 italic">
               {currentQuestion.explanation}
@@ -610,8 +624,11 @@ export default function QuizPlayerScreen() {
         <TouchableOpacity
           onPress={handleNext}
           disabled={!isAnswered || isSubmitting}
-          className={`rounded-2xl py-4 flex-[2] items-center shadow-lg shadow-sky-100 
-            ${isAnswered && !isSubmitting ? "bg-sky-500" : "bg-gray-200 shadow-none"}`}
+          className={`rounded-2xl py-4 flex-[2] items-center shadow-lg
+            ${isAnswered && !isSubmitting ? "" : "bg-gray-200 shadow-none"}`}
+          style={
+            isAnswered && !isSubmitting ? { backgroundColor: "#db8300" } : {}
+          }
         >
           {isSubmitting ? (
             <ActivityIndicator color="white" />

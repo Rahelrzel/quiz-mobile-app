@@ -14,6 +14,9 @@ import { Bot, Send, User } from "lucide-react-native";
 import { useChat } from "@/hooks/useChat";
 import { ChatMessage } from "@/api/chat";
 
+const PRIMARY = "#db8300";
+const PRIMARY_LIGHT = "#fff8eb";
+
 export default function ChatbotScreen() {
   const [inputText, setInputText] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -24,8 +27,6 @@ export default function ChatbotScreen() {
   const handleSend = () => {
     if (!inputText.trim() || isPending) return;
 
-    console.log("Chatbot: Sending message...");
-
     const userMessage: ChatMessage = {
       role: "user",
       content: inputText.trim(),
@@ -35,17 +36,14 @@ export default function ChatbotScreen() {
     setMessages(updatedMessages);
     setInputText("");
 
-    // Auto-scroll to bottom
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
-    // Align history handling with web app (slice last 5 messages)
     const history = updatedMessages.slice(-5);
 
     sendMessage(
       { message: userMessage.content, history },
       {
         onSuccess: (data) => {
-          // Robust response parsing matching web app: reply || message || content
           const reply =
             data?.reply || data?.message || data?.content || "No response.";
 
@@ -95,10 +93,11 @@ export default function ChatbotScreen() {
         className="flex-1"
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
+        {/* Header */}
         <View className="px-6 pt-6 flex-row items-center border-b border-gray-50 pb-4">
-          <Bot size={24} color="#0EA5E9" />
+          <Bot size={24} color={PRIMARY} />
           <Text className="text-2xl font-bold text-gray-900 ml-3">
-            JobPrep Assistant
+            LearnWorlds Assistant
           </Text>
         </View>
 
@@ -108,16 +107,20 @@ export default function ChatbotScreen() {
           contentContainerStyle={{ paddingVertical: 20 }}
           showsVerticalScrollIndicator={false}
         >
+          {/* Welcome message */}
           {messages.length === 0 && (
             <View className="flex-row justify-start mb-6">
-              <View className="w-8 h-8 rounded-full bg-sky-100 items-center justify-center mr-2 mt-1">
-                <Bot size={16} color="#0EA5E9" />
+              <View
+                className="w-8 h-8 rounded-full items-center justify-center mr-2 mt-1"
+                style={{ backgroundColor: PRIMARY_LIGHT }}
+              >
+                <Bot size={16} color={PRIMARY} />
               </View>
               <View className="p-4 rounded-2xl max-w-[80%] bg-gray-100 rounded-tl-none border border-gray-200">
                 <Text className="text-base leading-6 text-gray-800">
-                  Hello! I'm your JobPrep assistant. How can I help you today?
-                  You can ask me about available courses, quiz categories, or
-                  general assessment tips.
+                  Hello! I'm your LearnWorlds assistant. How can I help you
+                  today? You can ask me about available courses, quiz
+                  categories, or general assessment tips.
                 </Text>
               </View>
             </View>
@@ -131,16 +134,20 @@ export default function ChatbotScreen() {
               }`}
             >
               {msg.role === "assistant" && (
-                <View className="w-8 h-8 rounded-full bg-sky-100 items-center justify-center mr-2 mt-1">
-                  <Bot size={16} color="#0EA5E9" />
+                <View
+                  className="w-8 h-8 rounded-full items-center justify-center mr-2 mt-1"
+                  style={{ backgroundColor: PRIMARY_LIGHT }}
+                >
+                  <Bot size={16} color={PRIMARY} />
                 </View>
               )}
               <View
                 className={`p-4 rounded-2xl max-w-[80%] ${
                   msg.role === "user"
-                    ? "bg-sky-500 rounded-tr-none"
+                    ? "rounded-tr-none"
                     : "bg-gray-100 rounded-tl-none border border-gray-200"
                 }`}
+                style={msg.role === "user" ? { backgroundColor: PRIMARY } : {}}
               >
                 <Text
                   className={`text-base leading-6 ${
@@ -160,13 +167,16 @@ export default function ChatbotScreen() {
 
           {isPending && (
             <View className="flex-row justify-start mb-6">
-              <View className="w-8 h-8 rounded-full bg-sky-100 items-center justify-center mr-2 mt-1">
-                <Bot size={16} color="#0EA5E9" />
+              <View
+                className="w-8 h-8 rounded-full items-center justify-center mr-2 mt-1"
+                style={{ backgroundColor: PRIMARY_LIGHT }}
+              >
+                <Bot size={16} color={PRIMARY} />
               </View>
               <View className="bg-gray-50 p-4 rounded-2xl rounded-tl-none border border-gray-100 flex-row items-center">
                 <ActivityIndicator
                   size="small"
-                  color="#0EA5E9"
+                  color={PRIMARY}
                   className="mr-2"
                 />
                 <Text className="text-gray-400 italic">Bot is typing...</Text>
@@ -187,9 +197,11 @@ export default function ChatbotScreen() {
             onSubmitEditing={handleSend}
           />
           <TouchableOpacity
-            className={`rounded-xl p-3 ${
-              !inputText.trim() || isPending ? "bg-gray-300" : "bg-sky-500"
-            }`}
+            className="rounded-xl p-3"
+            style={{
+              backgroundColor:
+                !inputText.trim() || isPending ? "#D1D5DB" : PRIMARY,
+            }}
             activeOpacity={0.8}
             onPress={handleSend}
             disabled={!inputText.trim() || isPending}

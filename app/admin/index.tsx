@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   if (isAdmin === null) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#0EA5E9" />
+        <ActivityIndicator size="large" color="#db8300" />
       </View>
     );
   }
@@ -106,11 +106,15 @@ export default function AdminDashboard() {
 
         <TouchableOpacity
           onPress={() => router.replace("/home")}
-          className="bg-white p-6 rounded-3xl mt-4 flex-row items-center border border-sky-100 mb-10 shadow-sm"
+          className="bg-white p-6 rounded-3xl mt-4 flex-row items-center border mb-10 shadow-sm"
+          style={{ borderColor: "#ffd980" }}
           activeOpacity={0.7}
         >
-          <View className="w-12 h-12 rounded-2xl bg-sky-50 items-center justify-center mr-4">
-            <ExternalLink size={24} color="#0ea5e9" />
+          <View
+            className="w-12 h-12 rounded-2xl items-center justify-center mr-4"
+            style={{ backgroundColor: "#fff8eb" }}
+          >
+            <ExternalLink size={24} color="#db8300" />
           </View>
           <View className="flex-1">
             <Text className="text-gray-900 font-bold text-lg">
