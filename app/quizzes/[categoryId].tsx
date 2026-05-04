@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { FileText } from "lucide-react-native";
 import { useQuizzesByCategory, useQuizCategories } from "@/hooks/useQuizzes";
 
 const PRIMARY = "#db8300";
@@ -101,7 +102,13 @@ export default function CategoryQuizzesScreen() {
                 </Text>
 
                 <View className="flex-row items-center mb-6">
-                  <View className="flex-row items-center mr-6">
+                  <View className="flex-row items-center mr-4">
+                    <FileText size={18} color="#9CA3AF" />
+                    <Text className="text-gray-500 ml-1.5 text-sm font-medium">
+                      {quiz.questionCount} questions
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center mr-4">
                     <Ionicons name="star-outline" size={20} color="#9CA3AF" />
                     <Text className="text-gray-500 ml-1.5 text-sm font-medium">
                       {quiz.totalPoints} pts

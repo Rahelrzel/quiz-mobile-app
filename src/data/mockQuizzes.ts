@@ -11,6 +11,7 @@ export interface Quiz {
   category: string;
   passingScore: number;
   questions: Question[];
+  questionCount?: number;
 }
 
 export interface Category {

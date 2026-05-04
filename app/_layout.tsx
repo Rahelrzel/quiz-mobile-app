@@ -88,6 +88,18 @@ export default function RootLayout() {
                 options={{ title: "Certificate" }}
               />
               <Stack.Screen
+                name="profile/edit"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="profile/change-password"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="profile/payment-history"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
                 name="admin/index"
                 options={{ headerShown: false }}
               />

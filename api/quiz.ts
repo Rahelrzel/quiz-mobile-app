@@ -24,6 +24,7 @@ export interface Quiz {
   passingScore: number;
   translations: QuizTranslation[];
   questions?: Question[];
+  questionCount?: number;
 }
 
 export interface TestCategory {

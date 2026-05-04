@@ -31,10 +31,11 @@ export default function PaymentSuccess() {
 
         // Navigate back to quiz with the saved progress
         router.replace({
-          pathname: `/quiz/${progress.quizId}`,
+          pathname: "/quiz/[quizId]",
           params: {
+            quizId: progress.quizId,
             restore: "true",
-            currentIndex: progress.currentQuestionIndex,
+            currentIndex: progress.currentQuestionIndex.toString(),
             answers: JSON.stringify(progress.selectedAnswers),
             questionOrder: JSON.stringify(progress.shuffledQuestionIds),
           },
@@ -47,16 +48,19 @@ export default function PaymentSuccess() {
         const latestSession = await getLatestQuizSession();
         if (latestSession) {
           router.replace({
-            pathname: `/quiz/${latestSession.quizId}`,
-            params: { restore: "true" },
+            pathname: "/quiz/[quizId]",
+            params: {
+              quizId: latestSession.quizId,
+              restore: "true",
+            },
           });
         } else {
-          router.replace("/(tabs)");
+          router.replace("/(tabs)/home");
         }
       }
     } catch (error) {
       console.error("Payment success handler error:", error);
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/home");
     }
   };
 
