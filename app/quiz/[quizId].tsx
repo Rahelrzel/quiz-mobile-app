@@ -19,6 +19,10 @@ import {
   getQuizSession,
   saveQuizSession,
 } from "../../src/services/quizSession";
+import {
+  isQuestionLoadable,
+  mapApiQuestion,
+} from "../../src/utils/quizQuestions";
 
 export default function QuizPlayerScreen() {
   const params = useLocalSearchParams<{
@@ -60,7 +64,11 @@ export default function QuizPlayerScreen() {
   const [isPaymentProcessed, setIsPaymentProcessed] = useState(false);
 
   const shuffleQuestions = (questions: any[]) => {
-    const shuffled = [...questions];
+    const pool =
+      hasPaid || isPaymentProcessed
+        ? questions
+        : questions.filter((q) => !q.locked);
+    const shuffled = [...(pool.length > 0 ? pool : questions.slice(0, 3))];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -236,7 +244,7 @@ export default function QuizPlayerScreen() {
       quiz.questions &&
       quiz.questions.length > 3
     ) {
-      console.log("[Quiz] 🚨 TRIGGERING PAYMENT MODAL");
+      console.log("[Quiz] ?? TRIGGERING PAYMENT MODAL");
       setShowPaymentModal(true);
     } else {
       setShowPaymentModal(false);
@@ -255,27 +263,60 @@ export default function QuizPlayerScreen() {
     const questions = quiz?.questions;
     if (!questions) return [];
 
+    const mapQuestion = (q: any) => mapApiQuestion(q);
+
     if (questionOrder.length > 0) {
       return questionOrder
         .map((id) => questions.find((q: any) => String(q.id) === id))
         .filter((q): q is any => q !== undefined)
-        .map((q) => ({
-          id: q.id,
-          question: q.questionText,
-          options: q.options,
-          correctAnswer: q.correctAnswerIndex,
-          explanation: q.explanation,
-        }));
+        .map(mapQuestion);
     }
 
-    return questions.map((q) => ({
-      id: q.id,
-      question: q.questionText,
-      options: q.options,
-      correctAnswer: q.correctAnswerIndex,
-      explanation: q.explanation,
-    }));
-  }, [quiz, questionOrder]);
+    const pool =
+      hasPaid || isPaymentProcessed
+        ? questions
+        : questions.filter((q: any) => !q.locked);
+
+    return (pool.length > 0 ? pool : questions.slice(0, 3)).map(mapQuestion);
+  }, [quiz, questionOrder, hasPaid, isPaymentProcessed]);
+
+  // After payment, expand the saved free-preview order to include all unlocked questions
+  useEffect(() => {
+    if (!quiz?.questions) return;
+    if (!(hasPaid || isPaymentProcessed)) return;
+    if (questionOrder.length === 0) return;
+
+    const allIds = quiz.questions
+      .filter((q: any) => !q.locked)
+      .map((q: any) => String(q.id));
+    const missing = allIds.filter((id) => !questionOrder.includes(id));
+    if (missing.length === 0) return;
+
+    // Shuffle remaining and append so user continues from where they left off
+    const remaining = [...missing];
+    for (let i = remaining.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+    }
+    const expanded = [...questionOrder, ...remaining];
+    setQuestionOrder(expanded);
+
+    void saveQuizSession({
+      quizId: Number(quizId),
+      currentQuestionIndex: currentIndex,
+      answers: Object.fromEntries(
+        userAnswers
+          .filter((a) => a.selectedIndex !== null)
+          .map((a) => [String(a.questionId), a.selectedIndex as number]),
+      ),
+      questionOrder: expanded,
+      remainingTime: timeLeft > 0 ? timeLeft : 0,
+      language: "en",
+      isCompleted: false,
+    }).catch((err) =>
+      console.error("[QuizPlayer] Failed to expand session after payment:", err),
+    );
+  }, [hasPaid, isPaymentProcessed, quiz, questionOrder]);
 
   const handleFinish = () => {
     if (isSubmitting) return;
@@ -317,37 +358,56 @@ export default function QuizPlayerScreen() {
   const currentQuestion = transformedQuestions[currentIndex];
 
   const handleSelectAnswer = (index: number) => {
-    // Don't allow answering beyond question 3 if not paid
-    if (
-      currentIndex === 2 &&
-      !hasPaid &&
-      !isPaymentProcessed &&
-      !isPaymentLoading
-    ) {
-      console.log("[Quiz] 🚨 Blocking answer selection - payment required");
-      setShowPaymentModal(true);
-      return;
-    }
-
     if (isAnswered) return;
 
     setSelectedAnswer(index);
     setIsAnswered(true);
 
     const questionId = currentQuestion.id;
-    setUserAnswers((prev) => {
-      const existingIndex = prev.findIndex((a) => a.questionId === questionId);
+    const nextAnswers: SubmitAnswer[] = (() => {
+      const existingIndex = userAnswers.findIndex(
+        (a) => a.questionId === questionId,
+      );
       if (existingIndex !== -1) {
-        const newAnswers = [...prev];
-        newAnswers[existingIndex] = { questionId, selectedIndex: index };
-        return newAnswers;
+        const updated = [...userAnswers];
+        updated[existingIndex] = { questionId, selectedIndex: index };
+        return updated;
       }
-      return [...prev, { questionId, selectedIndex: index }];
-    });
+      return [...userAnswers, { questionId, selectedIndex: index }];
+    })();
+
+    setUserAnswers(nextAnswers);
 
     if (index === currentQuestion.correctAnswer) {
       setScore(score + 1);
     }
+
+    // Persist progress after every answered question
+    void (async () => {
+      try {
+        if (!quizId) return;
+        const answersMap: Record<string, number> = {};
+        nextAnswers.forEach((a) => {
+          if (a.questionId && a.selectedIndex !== null) {
+            answersMap[String(a.questionId)] = a.selectedIndex;
+          }
+        });
+        await saveQuizSession({
+          quizId: Number(quizId),
+          currentQuestionIndex: currentIndex,
+          answers: answersMap,
+          questionOrder,
+          remainingTime: timeLeft > 0 ? timeLeft : 0,
+          language: "en",
+          isCompleted: false,
+        });
+      } catch (error: any) {
+        console.error(
+          "[QuizPlayer] Failed to save progress after answer:",
+          error?.message || error,
+        );
+      }
+    })();
   };
 
   const saveCurrentSession = async (nextIndex: number) => {
@@ -542,12 +602,22 @@ export default function QuizPlayerScreen() {
       </View>
 
       <ScrollView className="flex-1 px-6 pt-8">
-        <Text className="text-2xl font-bold text-gray-900 mb-8">
-          {currentQuestion.question}
-        </Text>
+        {!currentQuestion || !isQuestionLoadable(currentQuestion) ? (
+          <View className="items-center py-12">
+            <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
+            <Text className="text-center text-gray-600 mt-4 px-4">
+              Unable to load question. Please try again or contact support at
+              supportlearnworlds@gmail.com
+            </Text>
+          </View>
+        ) : (
+          <>
+            <Text className="text-2xl font-bold text-gray-900 mb-8">
+              {currentQuestion.question}
+            </Text>
 
-        <View>
-          {currentQuestion.options.map((option: string, index: number) => (
+            <View>
+              {currentQuestion.options.map((option: string, index: number) => (
             <TouchableOpacity
               key={index}
               onPress={() => handleSelectAnswer(index)}
@@ -608,6 +678,8 @@ export default function QuizPlayerScreen() {
               {currentQuestion.explanation}
             </Text>
           </View>
+        )}
+          </>
         )}
       </ScrollView>
 

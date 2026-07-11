@@ -11,6 +11,9 @@ export interface UserProfile {
   totalCertificatesEarned: number;
   paymentStatus: "paid" | "unpaid";
   paid: boolean;
+  expired?: boolean;
+  lastPaymentDate?: string | null;
+  expiresAt?: string | null;
 }
 
 export interface BasicUserProfile {
@@ -23,6 +26,10 @@ export interface BasicUserProfile {
 
 export interface PaymentStatusResponse {
   paid: boolean;
+  expired?: boolean;
+  lastPaymentDate?: string | null;
+  expiresAt?: string | null;
+  expireDays?: number | null;
   payment: {
     status: string;
     userId: number;
@@ -40,6 +47,14 @@ export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
   confirmNewPassword: string;
+}
+
+export interface PaymentPricing {
+  amountCents: number;
+  amount: number;
+  currency: string;
+  productName: string;
+  formattedPrice: string;
 }
 
 export interface PaymentHistoryItem {
@@ -61,6 +76,11 @@ export const getUserProfile = async (): Promise<UserProfile> => {
 
 export const getPaymentStatus = async (): Promise<PaymentStatusResponse> => {
   const response = await api.get<PaymentStatusResponse>("payments/status");
+  return response.data;
+};
+
+export const getPaymentPricing = async (): Promise<PaymentPricing> => {
+  const response = await api.get<PaymentPricing>("payments/pricing");
   return response.data;
 };
 

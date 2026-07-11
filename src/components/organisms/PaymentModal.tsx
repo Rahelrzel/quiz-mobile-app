@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { usePaymentPricing } from "../../../hooks/usePaymentPricing";
+import { PriceShimmer } from "../atoms/PriceShimmer";
 import {
   View,
   Text,
@@ -45,13 +47,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 }) => {
   const [isPending, setIsPending] = useState(false);
   const { initiatePayment } = useGlobalPayment();
+  const {
+    data: pricing,
+    isLoading: isPricingLoading,
+    isError: isPricingError,
+  } = usePaymentPricing();
 
   const features = [
     "Unlock ALL quizzes on the platform",
     `Continue with all ${totalQuestions} questions`,
     "Detailed explanations for each answer",
     "Earn professional certificates",
-    "Unlimited retakes forever",
+    "Unlimited retakes during your access period",
   ];
 
   const handlePayment = async () => {
@@ -148,8 +155,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               Unlock All Quizzes
             </Text>
             <Text className="text-base text-center text-gray-600 mt-2">
-              You've completed the free preview! Pay once to unlock all quizzes
-              forever.
+              You've completed the free preview! One payment gives you 90 days of
+              full access to all premium quizzes, courses, and certificates.
             </Text>
           </View>
 
@@ -171,16 +178,25 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </View>
 
           {/* Price */}
-          <View className="items-center mb-6">
-            <View className="flex-row items-center gap-1 mb-2">
-              <Ionicons name="sparkles" size={16} color={THEME_COLOR} />
-              <Text className="text-sm text-gray-500">One-time payment</Text>
-            </View>
-            <Text className="text-4xl font-bold text-gray-900">$9.99</Text>
+          {isPricingLoading ? (
+            <PriceShimmer />
+          ) : (
+            <View className="items-center mb-6">
+              <View className="flex-row items-center gap-1 mb-2">
+                <Ionicons name="sparkles" size={16} color={THEME_COLOR} />
+                <Text className="text-sm text-gray-500">3-month access</Text>
+              </View>
+              <Text className="text-4xl font-bold text-gray-900">
+                {isPricingError ? "—" : pricing?.formattedPrice}
+              </Text>
             <Text className="text-xs text-gray-500 mt-1">
-              Lifetime access to all quizzes
+              90 days of unlimited access to all quizzes
             </Text>
-          </View>
+            <Text className="text-xs text-gray-500 mt-1">
+              Renew every 3 months to maintain access
+            </Text>
+            </View>
+          )}
 
           {/* Pay Button */}
           <TouchableOpacity

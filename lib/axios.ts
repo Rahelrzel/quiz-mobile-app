@@ -1,5 +1,31 @@
-import axios from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { authStorage } from "./authStorage";
+
+interface ApiRequestConfig extends InternalAxiosRequestConfig {
+  skipErrorToast?: boolean;
+}
+
+const getErrorMessage = (error: AxiosError): string => {
+  const data = error.response?.data as { message?: string } | undefined;
+
+  if (data?.message) {
+    return data.message;
+  }
+
+  if (!error.response) {
+    return "Cannot connect to the server. Make sure the backend is running and your phone is connected to the same WiFi network.";
+  }
+
+  const status = error.response.status;
+  if (status === 401) return "Please login to continue.";
+  if (status === 403) return "You do not have permission to perform this action.";
+  if (status === 404) return "The requested resource was not found.";
+  if (status >= 500) {
+    return "Something went wrong on our end. Please try again later.";
+  }
+
+  return "An unexpected error occurred.";
+};
 
 const api = axios.create({
   baseURL: "http://192.168.1.105:5001/api/",
@@ -37,45 +63,28 @@ api.interceptors.response.use(
     );
     return response;
   },
-  (error) => {
-    let message = "An unexpected error occurred.";
+  (error: AxiosError) => {
+    const config = error.config as ApiRequestConfig | undefined;
     const fullUrl = error.config?.url
       ? `${error.config.baseURL}${error.config.url}`
       : "unknown URL";
 
-    // Suppress 404 logging for quiz session endpoints
     const isSessionEndpoint = fullUrl.includes("/quiz-sessions/");
     const is404 = error.response?.status === 404;
+    const message = getErrorMessage(error);
 
     if (!error.response) {
-      // NETWORK ERROR
-      message =
-        "Cannot connect to the server. Make sure the backend is running and your phone is connected to the same WiFi network.";
       console.error(`[Axios Network Error] ${fullUrl}:`, error.message);
-    } else {
-      const { status, data } = error.response;
-
-      if (!(isSessionEndpoint && is404)) {
-        console.error(
-          `[Axios Error Response] ${status} from ${fullUrl}:`,
-          JSON.stringify(data, null, 2),
-        );
-      }
-
-      if (status === 401) {
-        message = "Invalid email or password.";
-      } else if (status === 400) {
-        message = data?.message || "Please check your input and try again.";
-      } else if (status >= 500) {
-        message = "Something went wrong on the server. Please try again later.";
-      } else {
-        message = data?.message || message;
-      }
+    } else if (!(isSessionEndpoint && is404)) {
+      console.error(
+        `[Axios Error Response] ${error.response.status} from ${fullUrl}:`,
+        JSON.stringify(error.response.data, null, 2),
+      );
     }
 
-    // Normalize error for React Query
     const normalizedError = {
       message,
+      code: (error.response?.data as { code?: string })?.code,
       originalError: error,
       status: error.response?.status,
     };

@@ -12,6 +12,7 @@ export interface Question {
   options: string[];
   explanation: string;
   correctAnswerIndex: number;
+  locked?: boolean;
 }
 
 export interface Quiz {
