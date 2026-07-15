@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter, Stack } from "expo-router";
+import { useLocalSearchParams, useRouter, Stack, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuizById, useSubmitQuiz } from "../../hooks/useQuizzes";
 import { SubmitAnswer } from "../../api/quiz";
-import { Alert } from "react-native";
 import { PaymentModal } from "../../src/components/organisms/PaymentModal";
 import { useGlobalPayment } from "../../hooks/usePayment";
 import { usePaymentStatus } from "../../src/context/PaymentContext";
@@ -37,6 +37,7 @@ export default function QuizPlayerScreen() {
 
   const lang = langParam || "en";
   const router = useRouter();
+  const navigation = useNavigation();
 
   const {
     data: quiz,
@@ -62,6 +63,63 @@ export default function QuizPlayerScreen() {
   const [isRestoring, setIsRestoring] = useState(true);
   const [questionOrder, setQuestionOrder] = useState<string[]>([]);
   const [isPaymentProcessed, setIsPaymentProcessed] = useState(false);
+
+  // Keep latest state for exit / beforeRemove saves (avoids stale closures)
+  const latestRef = useRef({
+    currentIndex,
+    userAnswers,
+    questionOrder,
+    timeLeft,
+    quizId,
+  });
+  const isExitingRef = useRef(false);
+  const hasSavedOnExitRef = useRef(false);
+
+  useEffect(() => {
+    latestRef.current = {
+      currentIndex,
+      userAnswers,
+      questionOrder,
+      timeLeft,
+      quizId,
+    };
+  }, [currentIndex, userAnswers, questionOrder, timeLeft, quizId]);
+
+  const buildAnswersMap = useCallback((answers: SubmitAnswer[]) => {
+    const answersMap: Record<string, number> = {};
+    answers.forEach((a) => {
+      if (a.questionId != null && a.selectedIndex !== null) {
+        answersMap[String(a.questionId)] = a.selectedIndex;
+      }
+    });
+    return answersMap;
+  }, []);
+
+  const persistSession = useCallback(
+    async (indexOverride?: number) => {
+      const {
+        currentIndex: idx,
+        userAnswers: answers,
+        questionOrder: order,
+        timeLeft: remaining,
+        quizId: id,
+      } = latestRef.current;
+
+      if (!id || order.length === 0) return;
+
+      await saveQuizSession({
+        quizId: Number(id),
+        currentQuestionIndex:
+          typeof indexOverride === "number" ? indexOverride : idx,
+        answers: buildAnswersMap(answers),
+        questionOrder: order,
+        remainingTime: remaining > 0 ? remaining : 0,
+        language: "en",
+        isCompleted: false,
+      });
+    },
+    [buildAnswersMap],
+  );
 
   const shuffleQuestions = (questions: any[]) => {
     const pool =
@@ -125,6 +183,12 @@ export default function QuizPlayerScreen() {
             selectedIndex: ansIndex as number,
           }));
           setUserAnswers(recoveredAnswers);
+          if (
+            typeof session.remainingTime === "number" &&
+            session.remainingTime > 0
+          ) {
+            setTimeLeft(session.remainingTime);
+          }
         } else {
           console.log("[QuizPlayer] No existing session found, starting fresh");
           setCurrentIndex(0);
@@ -181,35 +245,104 @@ export default function QuizPlayerScreen() {
   useEffect(() => {
     const initFreshSession = async () => {
       if (
-        quiz &&
-        quiz.questions &&
-        !isRestoring &&
-        questionOrder.length === 0
+        !quiz?.questions ||
+        isRestoring ||
+        questionOrder.length > 0 ||
+        !quizId
       ) {
-        console.log("[QuizPlayer] Initializing new shuffled question order");
-        const newOrder = shuffleQuestions(quiz.questions);
-        setQuestionOrder(newOrder);
+        return;
+      }
 
-        try {
-          // Save initial session with web app's payload structure
-          await saveQuizSession({
-            quizId: Number(quizId),
-            currentQuestionIndex: 0,
-            answers: {},
-            questionOrder: newOrder,
-            remainingTime: 0, // Initial session starts at 0 or full time, web app starts at 0 or quiz.timeLimit * 60
-            language: "en",
-            isCompleted: false,
-          });
-          console.log("[QuizPlayer] Initial session saved successfully");
-        } catch (error) {
-          console.error("[QuizPlayer] Failed to save initial session:", error);
+      // Guard against remount races: never overwrite an existing incomplete session
+      try {
+        const existing = await getQuizSession(quizId as string);
+        if (existing && !existing.isCompleted) {
+          console.log(
+            "[QuizPlayer] Existing session found during init — restoring instead of creating fresh",
+          );
+          setCurrentIndex(existing.currentQuestionIndex || 0);
+          if (existing.questionOrder?.length) {
+            setQuestionOrder(existing.questionOrder.map(String));
+          }
+          const recoveredAnswers: SubmitAnswer[] = Object.entries(
+            existing.answers || {},
+          ).map(([qId, ansIndex]) => ({
+            questionId: parseInt(qId, 10),
+            selectedIndex: ansIndex as number,
+          }));
+          setUserAnswers(recoveredAnswers);
+          if (
+            typeof existing.remainingTime === "number" &&
+            existing.remainingTime > 0
+          ) {
+            setTimeLeft(existing.remainingTime);
+          }
+          return;
         }
+      } catch (error) {
+        console.error(
+          "[QuizPlayer] Failed to re-check session before fresh init:",
+          error,
+        );
+      }
+
+      console.log("[QuizPlayer] Initializing new shuffled question order");
+      const newOrder = shuffleQuestions(quiz.questions);
+      setQuestionOrder(newOrder);
+
+      const fullTime =
+        typeof quiz.timeLimit === "number" && quiz.timeLimit > 0
+          ? quiz.timeLimit * 60
+          : 0;
+
+      try {
+        await saveQuizSession({
+          quizId: Number(quizId),
+          currentQuestionIndex: 0,
+          answers: {},
+          questionOrder: newOrder,
+          remainingTime: fullTime,
+          language: "en",
+          isCompleted: false,
+        });
+        console.log("[QuizPlayer] Initial session saved successfully");
+      } catch (error) {
+        console.error("[QuizPlayer] Failed to save initial session:", error);
       }
     };
 
     initFreshSession();
-  }, [quiz, isRestoring]);
+  }, [quiz, isRestoring, questionOrder.length, quizId]);
+
+  // Persist progress whenever the user leaves the screen (back gesture, header X, etc.)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e: any) => {
+      if (isExitingRef.current || hasSavedOnExitRef.current) {
+        return;
+      }
+
+      // Prevent leaving until we flush the session
+      e.preventDefault();
+      isExitingRef.current = true;
+
+      (async () => {
+        try {
+          await persistSession();
+          hasSavedOnExitRef.current = true;
+          console.log("[QuizPlayer] Session saved before leaving quiz");
+        } catch (error: any) {
+          console.error(
+            "[QuizPlayer] Failed to save session on exit:",
+            error?.message || error,
+          );
+        } finally {
+          navigation.dispatch(e.data.action);
+        }
+      })();
+    });
+
+    return unsubscribe;
+  }, [navigation, persistSession]);
 
   // Timer logic
   useEffect(() => {
@@ -412,33 +545,32 @@ export default function QuizPlayerScreen() {
 
   const saveCurrentSession = async (nextIndex: number) => {
     try {
-      if (!quizId) return;
-
-      const answersMap: Record<string, number> = {};
-      userAnswers.forEach((a) => {
-        if (a.questionId && a.selectedIndex !== null) {
-          answersMap[String(a.questionId)] = a.selectedIndex;
-        }
-      });
-
-      console.log(
-        `[QuizPlayer] Saving session for quiz ${quizId} at index ${nextIndex}`,
-      );
-
-      await saveQuizSession({
-        quizId: Number(quizId),
-        currentQuestionIndex: nextIndex,
-        answers: answersMap,
-        questionOrder: questionOrder, // Use state questionOrder
-        remainingTime: timeLeft > 0 ? timeLeft : 0, // Always number
-        language: "en",
-        isCompleted: false,
-      });
+      await persistSession(nextIndex);
     } catch (error: any) {
       console.error(
         "[QuizPlayer] Failed to save quiz session:",
         error.message || error,
       );
+    }
+  };
+
+  const handleExitQuiz = async () => {
+    try {
+      await persistSession();
+      hasSavedOnExitRef.current = true;
+      isExitingRef.current = true;
+      console.log("[QuizPlayer] Session saved on Exit Quiz");
+    } catch (error: any) {
+      console.error(
+        "[QuizPlayer] Failed to save on exit (continuing navigation):",
+        error?.message || error,
+      );
+    } finally {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/home");
+      }
     }
   };
 
@@ -461,7 +593,7 @@ export default function QuizPlayerScreen() {
       setCurrentIndex(nextIndex);
       setSelectedAnswer(null);
       setIsAnswered(false);
-      saveCurrentSession(nextIndex);
+      void saveCurrentSession(nextIndex);
     } else {
       handleFinish();
     }
@@ -469,9 +601,11 @@ export default function QuizPlayerScreen() {
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setSelectedAnswer(null); // In a real app we might want to preserve the answer, but let's stick to the prompt's flow
+      const prevIndex = currentIndex - 1;
+      setCurrentIndex(prevIndex);
+      setSelectedAnswer(null);
       setIsAnswered(false);
+      void saveCurrentSession(prevIndex);
     }
   };
 
@@ -568,7 +702,7 @@ export default function QuizPlayerScreen() {
           headerShown: true,
           title: quiz.title,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} className="ml-4">
+            <TouchableOpacity onPress={handleExitQuiz} className="ml-4">
               <Ionicons name="close" size={24} color="black" />
             </TouchableOpacity>
           ),
@@ -725,7 +859,7 @@ export default function QuizPlayerScreen() {
           userAnswers.map((a) => [String(a.questionId), a.selectedIndex]),
         )}
         shuffledQuestionIds={transformedQuestions.map((q) => q.id)}
-        onCancel={() => router.back()}
+        onCancel={handleExitQuiz}
         onPaymentComplete={() => {
           setHasPaid(true);
           setIsPaymentProcessed(true);
